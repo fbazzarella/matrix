@@ -4,6 +4,9 @@ class PPositions
   {
 private:
    PPosition positions[];
+
+   int       GetNextPlace(void);
+   void      CheckPositionsSize(void);
 public:
    uint      count,
              with_loss,
@@ -15,16 +18,14 @@ public:
              PPositions(void);
             ~PPositions(void){};
 
-   bool      Open(int side, double price);
+   bool      Open(int side, double price, double distance_to_loss, double distance_to_profit);
    bool      OnEachTick(MqlTick &tick);
    bool      CloseAll(double price);
-   int       GetNextPlace(void);
-   void      CheckPositionsSize(void);
   };
 
 PPositions::PPositions(void)
   {
-   ArrayResize(positions, 100);
+   ArrayResize(positions, 16);
 
    count         = 0;
    with_loss     = 0;
@@ -34,16 +35,16 @@ PPositions::PPositions(void)
    final_balance = 0;
   }
 
-bool PPositions::Open(int side, double price)
+bool PPositions::Open(int side, double price, double distance_to_loss, double distance_to_profit)
   {
-   if(side != -1 && side != 1) return false;
+   if((side != -1 && side != 1) || price == 0.0) return false;
 
    int next_place = GetNextPlace();
 
    if(next_place >= 0)
      {
-      if(side == -1) positions[next_place].Open(price, price + 50.5, price - 1);
-      if(side ==  1) positions[next_place].Open(price, price - 50.5, price + 1);
+      if(side == -1) positions[next_place].Open(price, price + distance_to_loss + 0.5, price - distance_to_profit - 0.5);
+      if(side ==  1) positions[next_place].Open(price, price - distance_to_loss - 0.5, price + distance_to_profit + 0.5);
 
       return true;
      }
@@ -76,7 +77,7 @@ int PPositions::GetNextPlace(void)
   {
    CheckPositionsSize();
 
-   for(int i = 0; i < ArraySize(positions); i++) if(!positions[i].IsOpened()) return i;
+   for(int i = 0; i < ArraySize(positions); i++) if(positions[i].IsClosed()) return i;
 
    return -1;
   }
