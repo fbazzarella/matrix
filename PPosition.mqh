@@ -118,14 +118,19 @@ bool PPosition::Close(double price_closed, double balance, double loss_higher, s
    positions.opened        -= 1;
    positions.final_balance += balance;
 
-   Print(side + " position opened at " + DoubleToString(price_opened, 1)   +
-         " and closed at "             + DoubleToString(price_closed, 1)   +
-         " with a balance of R$ "      + DoubleToString(balance,      2)   +
-         " and a higher loss of R$ "   + DoubleToString(loss_higher,  2)   +
-         ". Total of "                 + IntegerToString(positions.count)  +
-         " positions and "             + IntegerToString(positions.opened) +
-         " currently opened with a"    +
-         " partial balance of R$ "     + DoubleToString(positions.final_balance, 2) );
+   // Print(side + " position opened at " + DoubleToString(price_opened, 1)   +
+   //       " and closed at "             + DoubleToString(price_closed, 1)   +
+   //       " with a balance of R$ "      + DoubleToString(balance,      2)   +
+   //       " and a higher loss of R$ "   + DoubleToString(loss_higher,  2)   +
+   //       ". Total of "                 + IntegerToString(positions.count)  +
+   //       " positions and "             + IntegerToString(positions.opened) +
+   //       " currently opened with a"    +
+   //       " partial balance of R$ "     + DoubleToString(positions.final_balance, 2) );
+
+   Print("Total of "           + IntegerToString(positions.count)  +
+         " positions being "   + IntegerToString(positions.opened) +
+         " currently opened. " + DoubleToString((double)positions.with_profit / (double)positions.count * 100, 1) +
+         "% with profit." );
 
    return true;
   }
