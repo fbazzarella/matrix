@@ -2,6 +2,7 @@ class PPosition
   {
 private:
    uchar  state;
+   double exchange_tax;
 
    double price_opened,
           price_for_loss,
@@ -9,22 +10,22 @@ private:
           price_higher,
           price_lower;
 
-   bool   TryToClose(double price, bool forced);
-   bool   Close(double price_closed, double balance, double loss_higher, string side);
+   bool   TryToClose(double price, double &stats[], bool forced);
+   bool   Close(double price_closed, double balance, double loss_higher, string side, double &stats[]);
    double CalculateFinalValue(double value);
 public:
-          PPosition(void){ state = 0; };
+          PPosition(void){ state = 0; exchange_tax = 2.28; };
          ~PPosition(void){};
 
-   bool   Open(double open, double loss, double profit);
-   bool   OnEachTick(MqlTick &tick);
-   bool   ForceToClose(double price);
+   bool   Open(double open, double loss, double profit, double &stats[]);
+   bool   OnEachTick(MqlTick &tick, double &stats[]);
+   bool   ForceToClose(double price, double &stats[]);
 
    bool   IsClosed(void){ return state == 0; };
    bool   IsOpened(void){ return state == 1; };
   };
 
-bool PPosition::Open(double open, double loss, double profit)
+bool PPosition::Open(double open, double loss, double profit, double &stats[])
   {
    if(IsOpened()) return false;
 
@@ -36,31 +37,31 @@ bool PPosition::Open(double open, double loss, double profit)
    price_higher     = open;
    price_lower      = open;
 
-   positions.count     += 1;
-   positions.opened    += 1;
-   positions.opened_max = MathMax(positions.opened, positions.opened_max);
+   stats[0]        += 1;
+   stats[3]        += 1;
+   stats[4]         = MathMax(stats[3], stats[4]);
 
    return true;
   }
 
-bool PPosition::OnEachTick(MqlTick &tick)
+bool PPosition::OnEachTick(MqlTick &tick, double &stats[])
   {
    if(IsClosed()) return false;
 
    price_higher = MathMax(tick.last, price_higher);
    price_lower  = MathMin(tick.last, price_lower);
 
-   TryToClose(tick.last);
+   TryToClose(tick.last, stats);
 
    return true;
   }
 
-bool PPosition::ForceToClose(double price)
+bool PPosition::ForceToClose(double price, double &stats[])
   {
-   return TryToClose(price, true);
+   return TryToClose(price, stats, true);
   }
 
-bool PPosition::TryToClose(double price, bool forced = false)
+bool PPosition::TryToClose(double price, double &stats[], bool forced = false)
   {
    if(IsClosed()) return false;
 
@@ -106,37 +107,37 @@ bool PPosition::TryToClose(double price, bool forced = false)
       side        = "Buy";
      }
 
-   if(price_closed != 0) return Close(price_closed, balance, loss_higher, side);
+   if(price_closed != 0) return Close(price_closed, balance, loss_higher, side, stats);
    
    return false;
   }
 
-bool PPosition::Close(double price_closed, double balance, double loss_higher, string side)
+bool PPosition::Close(double price_closed, double balance, double loss_higher, string side, double &stats[])
   {
    if(IsClosed()) return false;
 
    state = 0;
 
    balance     = CalculateFinalValue(balance);
-   loss_higher = CalculateFinalValue(loss_higher);
+   loss_higher = MathMin(CalculateFinalValue(loss_higher), -exchange_tax);
 
-   balance < 0 ? positions.with_loss++ : positions.with_profit++;
+   balance < 0 ? stats[1]++ : stats[2]++;
 
-   positions.opened        -= 1;
-   positions.final_balance += balance;
+   stats[3] -= 1;
+   stats[5] += balance;
 
-   // Print(side + " position opened at " + DoubleToString(price_opened, 1)   +
-   //       " and closed at "             + DoubleToString(price_closed, 1)   +
-   //       " with a balance of R$ "      + DoubleToString(balance,      2)   +
-   //       " and a higher loss of R$ "   + DoubleToString(loss_higher,  2)   +
-   //       ". Total of "                 + IntegerToString(positions.count)  +
-   //       " positions and "             + IntegerToString(positions.opened) +
-   //       " currently opened with a"    +
-   //       " partial balance of R$ "     + DoubleToString(positions.final_balance, 2) );
+   Print(side + " position opened at " + DoubleToString(price_opened, 1) +
+         " and closed at "             + DoubleToString(price_closed, 1) +
+         " with a balance of R$ "      + DoubleToString(balance,      2) +
+         " and a higher loss of R$ "   + DoubleToString(loss_higher,  2) +
+         ". Total of "                 + DoubleToString(stats[0],     0) +
+         " positions and "             + DoubleToString(stats[3],     0) +
+         " currently opened with a"    +
+         " partial balance of "        + DoubleToString(stats[5],     2) + " BRL." );
 
-   Print("Total of "           + IntegerToString(positions.count)  +
-         " positions being "   + IntegerToString(positions.opened) +
-         " currently opened. " + DoubleToString((double)positions.with_profit / (double)positions.count * 100, 1) +
+   Print("Total of "           + DoubleToString(stats[0], 0) +
+         " positions being "   + DoubleToString(stats[3], 0) +
+         " currently opened. " + DoubleToString(stats[2] / stats[0] * 100, 1) +
          "% with profit." );
 
    return true;
@@ -144,5 +145,5 @@ bool PPosition::Close(double price_closed, double balance, double loss_higher, s
 
 double PPosition::CalculateFinalValue(double value)
   {
-   return value * 10 - 2.28;
+   return value * 10 - exchange_tax;
   }
