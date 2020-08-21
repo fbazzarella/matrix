@@ -4,46 +4,40 @@ class Position
   {
 private:
    uchar  state;
-   double exchange_tax;
-
-   double price_opened,
+   double exchange_tax,
+          price_opened,
           price_for_loss,
           price_for_profit,
           price_higher,
           price_lower;
 
-   bool   TryToClose(double price, double &stats[], bool forced);
+   bool   TryToClose(double price_to_close, double &stats[], bool forced);
    bool   Close(double price_closed, double balance, double loss_higher, string side, double &stats[]);
    double CalculateFinalValue(double value);
+   void   ShowFinalMessage(double price_closed, double balance, double loss_higher, string side, double &stats[]);
 public:
-          Position(void);
+          Position(void){ state = 0; exchange_tax = 2.28; };
          ~Position(void){};
 
-   bool   Open(double open, double loss, double profit, double &stats[]);
+   bool   Open(double price_to_open, double loss, double profit, double &stats[]);
    bool   OnEachTick(MqlTick &tick, double &stats[]);
-   bool   ForceToClose(double price, double &stats[]);
+   bool   ForceToClose(double price_to_close, double &stats[]);
 
    bool   IsClosed(void){ return state == 0; };
    bool   IsOpened(void){ return state == 1; };
   };
 
-Position::Position(void)
-  {
-   state        = 0;
-   exchange_tax = 2.28;
-  }
-
-bool Position::Open(double open, double loss, double profit, double &stats[])
+bool Position::Open(double price_to_open, double loss, double profit, double &stats[])
   {
    if(IsOpened()) return false;
 
    state = 1;
 
-   price_opened     = open;
+   price_opened     = price_to_open;
    price_for_loss   = loss;
    price_for_profit = profit;
-   price_higher     = open;
-   price_lower      = open;
+   price_higher     = price_to_open;
+   price_lower      = price_to_open;
 
    stats[0]        += 1;
    stats[3]        += 1;
@@ -64,12 +58,12 @@ bool Position::OnEachTick(MqlTick &tick, double &stats[])
    return true;
   }
 
-bool Position::ForceToClose(double price, double &stats[])
+bool Position::ForceToClose(double price_to_close, double &stats[])
   {
-   return TryToClose(price, stats, true);
+   return TryToClose(price_to_close, stats, true);
   }
 
-bool Position::TryToClose(double price, double &stats[], bool forced = false)
+bool Position::TryToClose(double price_to_close, double &stats[], bool forced = false)
   {
    if(IsClosed()) return false;
 
@@ -81,16 +75,16 @@ bool Position::TryToClose(double price, double &stats[], bool forced = false)
 
    if(price_opened > price_for_profit)
      {
-      if((forced && price >= price_opened) || price == price_for_loss)
+      if((forced && price_to_close >= price_opened) || price_to_close == price_for_loss)
         {
-         price_closed = price                - 0.5;
-         balance      = price_opened - price + 0.5;
+         price_closed = price_to_close                - 0.5;
+         balance      = price_opened - price_to_close + 0.5;
         }
 
-      else if((forced && price < price_opened) || price == price_for_profit)
+      else if((forced && price_to_close < price_opened) || price_to_close == price_for_profit)
         {
-         price_closed = price                + 0.5;
-         balance      = price_opened - price - 0.5;
+         price_closed = price_to_close                + 0.5;
+         balance      = price_opened - price_to_close - 0.5;
         }
 
       loss_higher = price_opened - price_higher + 0.5;
@@ -99,16 +93,16 @@ bool Position::TryToClose(double price, double &stats[], bool forced = false)
 
    else if(price_opened < price_for_profit)
      {
-      if((forced && price <= price_opened) || price == price_for_loss)
+      if((forced && price_to_close <= price_opened) || price_to_close == price_for_loss)
         {
-         price_closed = price                + 0.5;
-         balance      = price - price_opened + 0.5;
+         price_closed = price_to_close                + 0.5;
+         balance      = price_to_close - price_opened + 0.5;
         }
 
-      else if((forced && price > price_opened) || price == price_for_profit)
+      else if((forced && price_to_close > price_opened) || price_to_close == price_for_profit)
         {
-         price_closed = price                - 0.5;
-         balance      = price - price_opened - 0.5;
+         price_closed = price_to_close                - 0.5;
+         balance      = price_to_close - price_opened - 0.5;
         }
 
       loss_higher = price_lower - price_opened + 0.5;
@@ -134,6 +128,18 @@ bool Position::Close(double price_closed, double balance, double loss_higher, st
    stats[3] -= 1;
    stats[5] += balance;
 
+   ShowFinalMessage(price_closed, balance, loss_higher, side, stats);
+
+   return true;
+  }
+
+double Position::CalculateFinalValue(double value)
+  {
+   return value * 10 - exchange_tax;
+  }
+
+void Position::ShowFinalMessage(double price_closed, double balance, double loss_higher, string side, double &stats[])
+  {
    // Print(side + " position opened at " + DoubleToString(price_opened, 1) +
    //       " and closed at "             + DoubleToString(price_closed, 1) +
    //       " with a balance of R$ "      + DoubleToString(balance,      2) +
@@ -148,12 +154,5 @@ bool Position::Close(double price_closed, double balance, double loss_higher, st
          " currently opened. "  + DoubleToString(stats[2] / stats[0] * 100, 1) +
          "% with profit and a"  +
          " partial balance of " + DoubleToString(stats[5],     2) + " BRL." );
-
-   return true;
-  }
-
-double Position::CalculateFinalValue(double value)
-  {
-   return value * 10 - exchange_tax;
   }
 }
