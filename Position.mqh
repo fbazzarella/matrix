@@ -1,4 +1,6 @@
-class PPosition
+namespace Paibot
+{
+class Position
   {
 private:
    uchar  state;
@@ -14,8 +16,8 @@ private:
    bool   Close(double price_closed, double balance, double loss_higher, string side, double &stats[]);
    double CalculateFinalValue(double value);
 public:
-          PPosition(void){ state = 0; exchange_tax = 2.28; };
-         ~PPosition(void){};
+          Position(void);
+         ~Position(void){};
 
    bool   Open(double open, double loss, double profit, double &stats[]);
    bool   OnEachTick(MqlTick &tick, double &stats[]);
@@ -25,7 +27,13 @@ public:
    bool   IsOpened(void){ return state == 1; };
   };
 
-bool PPosition::Open(double open, double loss, double profit, double &stats[])
+Position::Position(void)
+  {
+   state        = 0;
+   exchange_tax = 2.28;
+  }
+
+bool Position::Open(double open, double loss, double profit, double &stats[])
   {
    if(IsOpened()) return false;
 
@@ -44,7 +52,7 @@ bool PPosition::Open(double open, double loss, double profit, double &stats[])
    return true;
   }
 
-bool PPosition::OnEachTick(MqlTick &tick, double &stats[])
+bool Position::OnEachTick(MqlTick &tick, double &stats[])
   {
    if(IsClosed()) return false;
 
@@ -56,12 +64,12 @@ bool PPosition::OnEachTick(MqlTick &tick, double &stats[])
    return true;
   }
 
-bool PPosition::ForceToClose(double price, double &stats[])
+bool Position::ForceToClose(double price, double &stats[])
   {
    return TryToClose(price, stats, true);
   }
 
-bool PPosition::TryToClose(double price, double &stats[], bool forced = false)
+bool Position::TryToClose(double price, double &stats[], bool forced = false)
   {
    if(IsClosed()) return false;
 
@@ -112,7 +120,7 @@ bool PPosition::TryToClose(double price, double &stats[], bool forced = false)
    return false;
   }
 
-bool PPosition::Close(double price_closed, double balance, double loss_higher, string side, double &stats[])
+bool Position::Close(double price_closed, double balance, double loss_higher, string side, double &stats[])
   {
    if(IsClosed()) return false;
 
@@ -126,24 +134,26 @@ bool PPosition::Close(double price_closed, double balance, double loss_higher, s
    stats[3] -= 1;
    stats[5] += balance;
 
-   Print(side + " position opened at " + DoubleToString(price_opened, 1) +
-         " and closed at "             + DoubleToString(price_closed, 1) +
-         " with a balance of R$ "      + DoubleToString(balance,      2) +
-         " and a higher loss of R$ "   + DoubleToString(loss_higher,  2) +
-         ". Total of "                 + DoubleToString(stats[0],     0) +
-         " positions and "             + DoubleToString(stats[3],     0) +
-         " currently opened with a"    +
-         " partial balance of "        + DoubleToString(stats[5],     2) + " BRL." );
+   // Print(side + " position opened at " + DoubleToString(price_opened, 1) +
+   //       " and closed at "             + DoubleToString(price_closed, 1) +
+   //       " with a balance of R$ "      + DoubleToString(balance,      2) +
+   //       " and a higher loss of R$ "   + DoubleToString(loss_higher,  2) +
+   //       ". Total of "                 + DoubleToString(stats[0],     0) +
+   //       " positions and "             + DoubleToString(stats[3],     0) +
+   //       " currently opened with a"    +
+   //       " partial balance of "        + DoubleToString(stats[5],     2) + " BRL." );
 
-   Print("Total of "           + DoubleToString(stats[0], 0) +
-         " positions being "   + DoubleToString(stats[3], 0) +
-         " currently opened. " + DoubleToString(stats[2] / stats[0] * 100, 1) +
-         "% with profit." );
+   Print("Total of "            + DoubleToString(stats[0], 0) +
+         " positions being "    + DoubleToString(stats[3], 0) +
+         " currently opened. "  + DoubleToString(stats[2] / stats[0] * 100, 1) +
+         "% with profit and a"  +
+         " partial balance of " + DoubleToString(stats[5],     2) + " BRL." );
 
    return true;
   }
 
-double PPosition::CalculateFinalValue(double value)
+double Position::CalculateFinalValue(double value)
   {
    return value * 10 - exchange_tax;
   }
+}
