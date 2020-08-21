@@ -61,7 +61,7 @@ bool PPositions::OnEachTick(MqlTick &tick)
 
 bool PPositions::CloseAll(double price)
   {
-   for(int i = 0; i < ArraySize(positions); i++) positions[i].TryToClose(price, true);
+   for(int i = 0; i < ArraySize(positions); i++) positions[i].ForceToClose(price);
 
    Print("Positions count: "            + IntegerToString(count));
    Print("Positions with loss: "        + IntegerToString(with_loss));

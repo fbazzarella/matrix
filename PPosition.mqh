@@ -9,6 +9,7 @@ private:
           price_higher,
           price_lower;
 
+   bool   TryToClose(double price, bool forced);
    bool   Close(double price_closed, double balance, double loss_higher, string side);
    double CalculateFinalValue(double value);
 public:
@@ -17,7 +18,7 @@ public:
 
    bool   Open(double open, double loss, double profit);
    bool   OnEachTick(MqlTick &tick);
-   bool   TryToClose(double price, bool forced);
+   bool   ForceToClose(double price);
 
    bool   IsClosed(void){ return state == 0; };
    bool   IsOpened(void){ return state == 1; };
@@ -54,6 +55,11 @@ bool PPosition::OnEachTick(MqlTick &tick)
    return true;
   }
 
+bool PPosition::ForceToClose(double price)
+  {
+   return TryToClose(price, true);
+  }
+
 bool PPosition::TryToClose(double price, bool forced = false)
   {
    if(IsClosed()) return false;
@@ -61,6 +67,7 @@ bool PPosition::TryToClose(double price, bool forced = false)
    double price_closed = 0,
           balance      = 0,
           loss_higher  = 0;
+
    string side;
 
    if(price_opened > price_for_profit)
@@ -111,7 +118,7 @@ bool PPosition::Close(double price_closed, double balance, double loss_higher, s
    state = 0;
 
    balance     = CalculateFinalValue(balance);
-   loss_higher = MathMin(CalculateFinalValue(loss_higher), -1.7);
+   loss_higher = CalculateFinalValue(loss_higher);
 
    balance < 0 ? positions.with_loss++ : positions.with_profit++;
 
@@ -137,5 +144,5 @@ bool PPosition::Close(double price_closed, double balance, double loss_higher, s
 
 double PPosition::CalculateFinalValue(double value)
   {
-   return value * 10 - 1.7;
+   return value * 10 - 2.28;
   }
