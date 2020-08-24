@@ -4,8 +4,10 @@ class Position
   {
 private:
    uchar  state;
-   double exchange_tax,
-          price_opened,
+   double exchange_tax;
+
+   string collection_id;
+   double price_opened,
           price_for_loss,
           price_for_profit,
           price_higher,
@@ -19,7 +21,7 @@ public:
           Position(void){ state = 0; exchange_tax = 2.28; };
          ~Position(void){};
 
-   bool   Open(double price_to_open, double loss, double profit, double &stats[]);
+   bool   Open(string id, double price_to_open, double loss, double profit, double &stats[]);
    bool   OnEachTick(MqlTick &tick, double &stats[]);
    bool   ForceToClose(double price_to_close, double &stats[]);
 
@@ -27,21 +29,22 @@ public:
    bool   IsOpened(void){ return state == 1; };
   };
 
-bool Position::Open(double price_to_open, double loss, double profit, double &stats[])
+bool Position::Open(string id, double price_to_open, double loss, double profit, double &stats[])
   {
    if(IsOpened()) return false;
 
    state = 1;
 
+   collection_id    = id;
    price_opened     = price_to_open;
    price_for_loss   = loss;
    price_for_profit = profit;
    price_higher     = price_to_open;
    price_lower      = price_to_open;
 
-   stats[0]        += 1;
-   stats[3]        += 1;
-   stats[4]         = MathMax(stats[3], stats[4]);
+   stats[0] += 1;
+   stats[3] += 1;
+   stats[4]  = MathMax(stats[3], stats[4]);
 
    return true;
   }
@@ -140,19 +143,20 @@ double Position::CalculateFinalValue(double value)
 
 void Position::ShowFinalMessage(double price_closed, double balance, double loss_higher, string side, double &stats[])
   {
-   // Print(side + " position opened at " + DoubleToString(price_opened, 1) +
-   //       " and closed at "             + DoubleToString(price_closed, 1) +
-   //       " with a balance of R$ "      + DoubleToString(balance,      2) +
-   //       " and a higher loss of R$ "   + DoubleToString(loss_higher,  2) +
-   //       ". Total of "                 + DoubleToString(stats[0],     0) +
-   //       " positions and "             + DoubleToString(stats[3],     0) +
-   //       " currently opened with a"    +
-   //       " partial balance of "        + DoubleToString(stats[5],     2) + " BRL." );
+   // Print(collection_id + ": " + side +
+   //       " position opened at "      + DoubleToString(price_opened, 1) +
+   //       " and closed at "           + DoubleToString(price_closed, 1) +
+   //       " with a balance of R$ "    + DoubleToString(balance,      2) +
+   //       " and a higher loss of R$ " + DoubleToString(loss_higher,  2) +
+   //       ". Total of "               + DoubleToString(stats[0],     0) +
+   //       " positions and "           + DoubleToString(stats[3],     0) +
+   //       " currently opened with a"  +
+   //       " partial balance of "      + DoubleToString(stats[5],     2) + " BRL." );
 
-   Print("Total of "            + DoubleToString(stats[0], 0) +
-         " positions being "    + DoubleToString(stats[3], 0) +
-         " currently opened. "  + DoubleToString(stats[2] / stats[0] * 100, 1) +
-         "% with profit and a"  +
-         " partial balance of " + DoubleToString(stats[5],     2) + " BRL." );
+   Print(collection_id + ": Total of " + DoubleToString(stats[0], 0) +
+         " positions being "           + DoubleToString(stats[3], 0) +
+         " currently opened. "         + DoubleToString(stats[2] / stats[0] * 100, 1) +
+         "% with profit and a"         +
+         " partial balance of "        + DoubleToString(stats[5],     2) + " BRL." );
   }
 }
