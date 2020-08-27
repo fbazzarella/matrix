@@ -24,7 +24,8 @@ public:
             Position(void){ state = 0; exchange_tax = 2.28; };
            ~Position(void){};
 
-   bool     Open(string _collection_id, uint _audit_file_handler, double price_to_open, double _price_for_loss, double _price_for_profit, double &stats[]);
+   bool     Open(string _collection_id, uint _audit_file_handler, double price_to_open,
+                 double _price_for_loss, double _price_for_profit, double &stats[]);
    bool     OnEachTick(MqlTick &tick, double &stats[]);
    bool     ForceToClose(double price_to_close, double &stats[]);
 
@@ -32,7 +33,8 @@ public:
    bool     IsOpened(void){ return state == 1; };
   };
 
-bool Position::Open(string _collection_id, uint _audit_file_handler, double price_to_open, double _price_for_loss, double _price_for_profit, double &stats[])
+bool Position::Open(string _collection_id, uint _audit_file_handler, double price_to_open,
+                    double _price_for_loss, double _price_for_profit, double &stats[])
   {
    if(IsOpened()) return false;
 
@@ -48,9 +50,9 @@ bool Position::Open(string _collection_id, uint _audit_file_handler, double pric
    price_higher     = price_to_open;
    price_lower      = price_to_open;
 
-   stats[0] += 1;
-   stats[3] += 1;
-   stats[4]  = MathMax(stats[3], stats[4]);
+   stats[0] += 1; // count
+   stats[3] += 1; // opened
+   stats[4]  = MathMax(stats[3], stats[4]); // opened_max
 
    return true;
   }
@@ -133,10 +135,10 @@ bool Position::Close(double price_closed, double balance, double loss_higher, st
    balance     = CalculateFinalValue(balance);
    loss_higher = MathMin(CalculateFinalValue(loss_higher), -exchange_tax);
 
-   balance < 0 ? stats[1]++ : stats[2]++;
+   balance < 0 ? stats[1]++ : stats[2]++; // with_loss : with_profit
 
-   stats[3] -= 1;
-   stats[5] += balance;
+   stats[3] -= 1; // opened
+   stats[5] += balance; // final_balance
 
    PrintAuditToLog(price_closed, balance, loss_higher, side, stats);
    PrintAuditToFile(price_closed, balance, loss_higher, side);
@@ -170,18 +172,18 @@ void Position::PrintAuditToLog(double price_closed, double balance, double loss_
 
 void Position::PrintAuditToFile(double price_closed, double balance, double loss_higher, string side)
   {
-   uint time_difference = (uint)(time_closed - time_opened);
-
-   string _price_opened = DoubleToString(price_opened, 2),
-          _price_closed = DoubleToString(price_closed, 2),
-          _balance      = DoubleToString(balance,      2),
-          _loss_higher  = DoubleToString(loss_higher,  2);
+   uint   time_difference = (uint)(time_closed - time_opened);
+   string _price_opened   = DoubleToString(price_opened, 2),
+          _price_closed   = DoubleToString(price_closed, 2),
+          _balance        = DoubleToString(balance,      2),
+          _loss_higher    = DoubleToString(loss_higher,  2);
 
    StringReplace(_price_opened, ".", ",");
    StringReplace(_price_closed, ".", ",");
    StringReplace(_balance,      ".", ",");
    StringReplace(_loss_higher,  ".", ",");
 
-   FileWrite(audit_file_handler, collection_id, time_opened, time_closed, time_difference, side, _price_opened, _price_closed, _balance, _loss_higher);
+   FileWrite(audit_file_handler, collection_id, time_opened, time_closed, time_difference,
+             side, _price_opened, _price_closed, _balance, _loss_higher);
   }
 }
