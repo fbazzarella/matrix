@@ -5,17 +5,19 @@ namespace Paibot
 class Positions
   {
 private:
-   string   collection_id;
-
    Position positions[];
+   string   collection_id;
+   uint     audit_file_handler;
    double   stats[6]; // 0-count, 1-with_loss, 2-with_profit, 3-opened, 4-opened_max, 5-final_balance
 
    int      GetNextPlace(void);
    void     SetPositionsSize(void);
    void     SetStats(void);
+   void     OpenAuditFile(void);
+   void     CloseAuditFile(void);
 public:       
-            Positions(string id) : collection_id(id) { SetPositionsSize(); SetStats(); };
-           ~Positions(void){};
+            Positions(string _collection_id) : collection_id(_collection_id) { SetPositionsSize(); SetStats(); OpenAuditFile(); };
+           ~Positions(void){ CloseAuditFile(); };
 
    bool     Open(int side, double price_to_open, double distance_to_loss, double distance_to_profit);
    void     OnEachTick(MqlTick &tick);
@@ -35,7 +37,7 @@ bool Positions::Open(int side, double price_to_open, double distance_to_loss, do
       double price_for_loss   = side == -1 ? price_to_open + distance_to_loss   + 0.5 : price_to_open - distance_to_loss   - 0.5,
              price_for_profit = side == -1 ? price_to_open - distance_to_profit - 0.5 : price_to_open + distance_to_profit + 0.5;
 
-      return positions[next_place].Open(collection_id, price_to_open, price_for_loss, price_for_profit, stats);
+      return positions[next_place].Open(collection_id, audit_file_handler, price_to_open, price_for_loss, price_for_profit, stats);
      }
 
    return false;
@@ -83,6 +85,16 @@ void Positions::SetPositionsSize(void)
 void Positions::SetStats(void)
   {
    for(int i = 0; i < ArraySize(stats); i++) stats[i] = 0;
+  }
+
+void Positions::OpenAuditFile(void)
+  {
+   audit_file_handler = FileOpen("audit_" + collection_id + ".csv", FILE_READ|FILE_WRITE|FILE_CSV, ";");
+  }
+
+void Positions::CloseAuditFile(void)
+  {
+   FileClose(audit_file_handler);
   }
 
 void Positions::PrintStatsToLog(void)

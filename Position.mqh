@@ -3,42 +3,48 @@ namespace Paibot
 class Position
   {
 private:
-   uchar  state;
-   double exchange_tax;
+   uchar    state;
+   double   exchange_tax;
+   string   collection_id;
+   uint     audit_file_handler;
+   datetime time_opened,
+            time_closed;
+   double   price_opened,
+            price_for_loss,
+            price_for_profit,
+            price_higher,
+            price_lower;
 
-   string collection_id;
-   double price_opened,
-          price_for_loss,
-          price_for_profit,
-          price_higher,
-          price_lower;
-
-   bool   TryToClose(double price_to_close, double &stats[], bool forced);
-   bool   Close(double price_closed, double balance, double loss_higher, string side, double &stats[]);
-   double CalculateFinalValue(double value);
-   void   ShowFinalMessage(double price_closed, double balance, double loss_higher, string side, double &stats[]);
+   bool     TryToClose(double price_to_close, double &stats[], bool forced);
+   bool     Close(double price_closed, double balance, double loss_higher, string side, double &stats[]);
+   double   CalculateFinalValue(double value);
+   void     PrintAuditToLog(double price_closed, double balance, double loss_higher, string side, double &stats[]);
+   void     PrintAuditToFile(double price_closed, double balance, double loss_higher, string side);
 public:
-          Position(void){ state = 0; exchange_tax = 2.28; };
-         ~Position(void){};
+            Position(void){ state = 0; exchange_tax = 2.28; };
+           ~Position(void){};
 
-   bool   Open(string id, double price_to_open, double loss, double profit, double &stats[]);
-   bool   OnEachTick(MqlTick &tick, double &stats[]);
-   bool   ForceToClose(double price_to_close, double &stats[]);
+   bool     Open(string _collection_id, uint _audit_file_handler, double price_to_open, double _price_for_loss, double _price_for_profit, double &stats[]);
+   bool     OnEachTick(MqlTick &tick, double &stats[]);
+   bool     ForceToClose(double price_to_close, double &stats[]);
 
-   bool   IsClosed(void){ return state == 0; };
-   bool   IsOpened(void){ return state == 1; };
+   bool     IsClosed(void){ return state == 0; };
+   bool     IsOpened(void){ return state == 1; };
   };
 
-bool Position::Open(string id, double price_to_open, double loss, double profit, double &stats[])
+bool Position::Open(string _collection_id, uint _audit_file_handler, double price_to_open, double _price_for_loss, double _price_for_profit, double &stats[])
   {
    if(IsOpened()) return false;
 
    state = 1;
 
-   collection_id    = id;
+   collection_id      = _collection_id;
+   audit_file_handler = _audit_file_handler;
+
+   time_opened      = TimeTradeServer();
    price_opened     = price_to_open;
-   price_for_loss   = loss;
-   price_for_profit = profit;
+   price_for_loss   = _price_for_loss;
+   price_for_profit = _price_for_profit;
    price_higher     = price_to_open;
    price_lower      = price_to_open;
 
@@ -123,6 +129,7 @@ bool Position::Close(double price_closed, double balance, double loss_higher, st
 
    state = 0;
 
+   time_closed = TimeTradeServer();
    balance     = CalculateFinalValue(balance);
    loss_higher = MathMin(CalculateFinalValue(loss_higher), -exchange_tax);
 
@@ -131,7 +138,8 @@ bool Position::Close(double price_closed, double balance, double loss_higher, st
    stats[3] -= 1;
    stats[5] += balance;
 
-   ShowFinalMessage(price_closed, balance, loss_higher, side, stats);
+   PrintAuditToLog(price_closed, balance, loss_higher, side, stats);
+   PrintAuditToFile(price_closed, balance, loss_higher, side);
 
    return true;
   }
@@ -141,7 +149,7 @@ double Position::CalculateFinalValue(double value)
    return value * 10 - exchange_tax;
   }
 
-void Position::ShowFinalMessage(double price_closed, double balance, double loss_higher, string side, double &stats[])
+void Position::PrintAuditToLog(double price_closed, double balance, double loss_higher, string side, double &stats[])
   {
    // Print(collection_id + ": " + side +
    //       " position opened at "      + DoubleToString(price_opened, 1) +
@@ -158,5 +166,22 @@ void Position::ShowFinalMessage(double price_closed, double balance, double loss
          " currently opened. "         + DoubleToString(stats[2] / stats[0] * 100, 1) +
          "% with profit and a"         +
          " partial balance of "        + DoubleToString(stats[5],     2) + " BRL." );
+  }
+
+void Position::PrintAuditToFile(double price_closed, double balance, double loss_higher, string side)
+  {
+   uint time_difference = (uint)(time_closed - time_opened);
+
+   string _price_opened = DoubleToString(price_opened, 2),
+          _price_closed = DoubleToString(price_closed, 2),
+          _balance      = DoubleToString(balance,      2),
+          _loss_higher  = DoubleToString(loss_higher,  2);
+
+   StringReplace(_price_opened, ".", ",");
+   StringReplace(_price_closed, ".", ",");
+   StringReplace(_balance,      ".", ",");
+   StringReplace(_loss_higher,  ".", ",");
+
+   FileWrite(audit_file_handler, collection_id, time_opened, time_closed, time_difference, side, _price_opened, _price_closed, _balance, _loss_higher);
   }
 }
