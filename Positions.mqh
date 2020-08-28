@@ -17,7 +17,7 @@ private:
    void     OpenAuditFile(void);
    void     CloseAuditFile(void);
 public:       
-            Positions(void){ SetCollectionId("sample"); SetCollectionSize(16); InitStats(); OpenAuditFile(); };
+            Positions(void){ SetCollectionSize(16); InitStats(); };
            ~Positions(void){ CloseAuditFile(); };
 
    void     SetCollectionId(string _collection_id);
@@ -33,10 +33,14 @@ void Positions::SetCollectionId(string _collection_id)
    collection_id = _collection_id;
 
    StringReplace(collection_id, " ", "_");
+
+   OpenAuditFile();
   }
 
 bool Positions::Open(int side, double price_to_open, double distance_to_loss, double distance_to_profit)
   {
+   if(collection_id == NULL || collection_id == ""){ Print("ERROR: Collection id not defined."); return false; };
+
    if((side != -1 && side != 1) || price_to_open == 0.0) return false;
 
    double price_for_loss   = side == -1 ? price_to_open + distance_to_loss   + 0.5 : price_to_open - distance_to_loss   - 0.5,
