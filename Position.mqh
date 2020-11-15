@@ -4,10 +4,10 @@ class Position
   {
 private:
    uchar    state;
-   double   symbol_step;
-   double   symbol_factor;
-   double   symbol_cost;
-   string   collection_id;
+   double   symbol_factor,
+            symbol_step,
+            symbol_cost;
+   string   positions_id;
    int      audit_file_handler;
    datetime time_opened,
             time_closed;
@@ -19,7 +19,7 @@ private:
 
    void     InitSettings(void);
    bool     TryToClose(MqlTick &tick, double &stats[], string &partial_balances, bool forced);
-   bool     Close(string side, double loss_higher, double price_closed, double balance, double &stats[], string &partial_balances);
+   bool     Close(string side, double price_closed, double loss_higher, double balance, double &stats[], string &partial_balances);
    double   CalculateFinalValue(double price_difference);
    void     PrintAuditToLog(double price_closed, double balance, double loss_higher, string side, double &stats[]);
    void     PrintAuditToFile(double price_closed, double balance, double loss_higher, string side, double &stats[]);
@@ -27,7 +27,7 @@ public:
             Position(void){ InitSettings(); };
            ~Position(void){};
 
-   bool     Open(string _collection_id, int _audit_file_handler, double price_to_open,
+   bool     Open(string _positions_id, int _audit_file_handler, double price_to_open,
                  double _price_for_loss, double _price_for_profit, double &stats[]);
    bool     OnTick(MqlTick &tick, double &stats[], string &partial_balances);
    bool     ForceToClose(MqlTick &tick, double &stats[], string &partial_balances);
@@ -36,14 +36,14 @@ public:
    bool     IsOpened(void){ return state == 1; };
   };
 
-bool Position::Open(string _collection_id, int _audit_file_handler, double price_to_open,
+bool Position::Open(string _positions_id, int _audit_file_handler, double price_to_open,
                     double _price_for_loss, double _price_for_profit, double &stats[])
   {
    if(IsOpened()) return false;
 
    state = 1;
 
-   collection_id      = _collection_id;
+   positions_id       = _positions_id;
    audit_file_handler = _audit_file_handler;
 
    time_opened      = TimeTradeServer();
@@ -86,52 +86,38 @@ bool Position::TryToClose(MqlTick &tick, double &stats[], string &partial_balanc
           price_bid  = tick.bid;
 
    string side;
-   double loss_higher  = 0,
-          price_closed = 0,
+   double price_closed = 0,
+          loss_higher  = 0,
           balance      = 0;
 
    if(price_opened > price_for_profit)
      {
-      side        = "Sell";
+      side = "Sell";
+
+           if(price_last >= price_for_loss || forced)       price_closed = price_ask;
+      else if(price_last <= price_for_profit - symbol_step) price_closed = price_for_profit;
+
       loss_higher = price_opened - price_higher;
-
-      if(price_last >= price_for_loss || forced)
-        {
-         price_closed = price_ask;
-         balance      = price_opened - price_closed;
-        }
-
-      else if(price_last <= price_for_profit - symbol_step)
-        {
-         price_closed = price_last   + symbol_step;
-         balance      = price_opened - price_closed;
-        }
+      balance     = price_opened - price_closed;
      }
 
    else if(price_opened < price_for_profit)
      {
-      side        = "Buy";
-      loss_higher = price_lower - price_opened;
+      side = "Buy";
 
-      if(price_last <= price_for_loss || forced)
-        {
-         price_closed = price_bid;
-         balance      = price_closed - price_opened;
-        }
+           if(price_last <= price_for_loss || forced)       price_closed = price_bid;
+      else if(price_last >= price_for_profit + symbol_step) price_closed = price_for_profit;
 
-      else if(price_last >= price_for_profit + symbol_step)
-        {
-         price_closed = price_last   - symbol_cost;
-         balance      = price_closed - price_opened;
-        }
+      loss_higher = price_lower  - price_opened;
+      balance     = price_closed - price_opened;
      }
 
-   if(price_closed != 0) return Close(side, loss_higher, price_closed, balance, stats, partial_balances);
+   if(price_closed > 0) return Close(side, price_closed, loss_higher, balance, stats, partial_balances);
    
    return false;
   }
 
-bool Position::Close(string side, double loss_higher, double price_closed, double balance, double &stats[], string &partial_balances)
+bool Position::Close(string side, double price_closed, double loss_higher, double balance, double &stats[], string &partial_balances)
   {
    if(IsClosed()) return false;
 
@@ -158,8 +144,8 @@ void Position::InitSettings(void)
   {
    state = 0;
 
-   symbol_step   = 0.5;
    symbol_factor = 10;
+   symbol_step   = 0.5;
    symbol_cost   = 2.4;
   }
 
@@ -170,7 +156,7 @@ double Position::CalculateFinalValue(double price_difference)
 
 void Position::PrintAuditToLog(double price_closed, double balance, double loss_higher, string side, double &stats[])
   {
-   Print(collection_id + ": " + side +
+   Print(positions_id + ": " + side +
          " position opened at "      + DoubleToString(price_opened, 1) +
          " and closed at "           + DoubleToString(price_closed, 1) +
          " with a balance of R$ "    + DoubleToString(balance,      2) +
@@ -196,7 +182,7 @@ void Position::PrintAuditToFile(double price_closed, double balance, double loss
    StringReplace(_loss_higher,   ".", ",");
    StringReplace(_final_balance, ".", ",");
 
-   FileWrite(audit_file_handler, collection_id, time_opened, time_closed, time_difference,
+   FileWrite(audit_file_handler, positions_id, time_opened, time_closed, time_difference,
              side, _price_opened, _price_closed, _balance, _loss_higher, _final_balance);
   }
 }
