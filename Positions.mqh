@@ -11,7 +11,7 @@ private:
    bool     async;
    double   stats[7]; // 0-count, 1-with_loss, 2-with_profit, 3-opened, 4-opened_max, 5-opened_aborted, 6-balance_final
    string   audit[],
-            balance_partial;
+            balance_chain;
 
    int      GetNextPlace(void);
    void     CheckCollectionSize(void);
@@ -23,14 +23,14 @@ public:
 
    void     SetId(string _id){ id = _id; StringReplace(id, " ", "_"); };
    void     SetAsync(bool _async){ async = _async; };
-   bool     Open(int side, double price_to_open, double distance_to_loss, double distance_to_profit);
-   void     OnTick(MqlTick &tick);
+   bool     Open(int side, double price_to_open, double distance_to_loss, double distance_to_profit, int address_part1);
+   void     OnTick(MqlTick &tick, int address_part2);
    bool     CloseAll(MqlTick &tick);
+   string   GetStats(void);
    void     PrintStatsToLog(void);
-   void     DumpAllReports();
   };
 
-bool Positions::Open(int side, double price_to_open, double distance_to_loss, double distance_to_profit)
+bool Positions::Open(int side, double price_to_open, double distance_to_loss, double distance_to_profit, int address_part1)
   {
    if(id == NULL || id == ""){ Print("ERROR: Collection id not defined."); return false; };
 
@@ -38,15 +38,17 @@ bool Positions::Open(int side, double price_to_open, double distance_to_loss, do
 
    if(!async && stats[3] == 1) return false;
 
+   int next_place = GetNextPlace();
+
    double price_for_loss   = side == -1 ? price_to_open + distance_to_loss   : price_to_open - distance_to_loss,
           price_for_profit = side == -1 ? price_to_open - distance_to_profit : price_to_open + distance_to_profit;
 
-   return positions[GetNextPlace()].Open(id, price_to_open, price_for_loss, price_for_profit, stats);
+   return positions[next_place].Open(id, side, price_to_open, price_for_loss, price_for_profit, address_part1, next_place, stats);
   }
 
-void Positions::OnTick(MqlTick &tick)
+void Positions::OnTick(MqlTick &tick, int address_part2)
   {
-   for(int i = 0; i < collection_size; i++) positions[i].OnTick(tick, stats, audit, balance_partial);
+   for(int i = 0; i < collection_size; i++) positions[address_part2].OnTick(tick, stats, audit, balance_chain);
   }
 
 bool Positions::CloseAll(MqlTick &tick)
@@ -55,7 +57,7 @@ bool Positions::CloseAll(MqlTick &tick)
 
    stats[5] += stats[3]; // opened_aborted
 
-   for(int i = 0; i < collection_size; i++) positions[i].ForceToClose(tick, stats, audit, balance_partial);
+   for(int i = 0; i < collection_size; i++) positions[i].ForceToClose(tick, stats, audit, balance_chain);
 
    return true;
   }
@@ -85,7 +87,27 @@ void Positions::InitStats(void)
   {
    for(int i = 0; i < ArraySize(stats); i++) stats[i] = 0;
 
-   balance_partial = "0\t";
+   balance_chain = "0\t";
+  }
+
+string Positions::GetStats(void)
+  {
+   string id_tabulated  = id,
+          profit_rate   = DoubleToString(stats[2] / stats[0], 3),
+          balance_final = DoubleToString(stats[6], 2),
+          stats_chain   = "invalid";
+
+   StringReplace(id_tabulated,  "_", "\t");
+   StringReplace(profit_rate,   ".", ",");
+   StringReplace(balance_final, ".", ",");
+   StringReplace(balance_chain, ".", ",");
+
+   StringConcatenate(stats_chain, stats_chain, "\t", id_tabulated, "\t", id, "\t",
+      DoubleToString(stats[0], 0), "\t", DoubleToString(stats[1], 0), "\t",
+      DoubleToString(stats[2], 0), "\t", profit_rate, "\t", DoubleToString(stats[4], 0), "\t",
+      DoubleToString(stats[5], 0), "\t", balance_final, "\t", balance_chain);
+
+   return stats_chain;
   }
 
 void Positions::PrintStatsToLog(void)
@@ -121,29 +143,5 @@ void Positions::PrintStatsToLog(void)
       Print("");
       Print("");
      }
-  }
-
-void Positions::DumpAllReports()
-  {
-   if(stats[0] == 0) return;
-
-   int    handler_stats = FileOpen("stats/" + id + ".csv", FILE_READ|FILE_WRITE|FILE_CSV|FILE_COMMON, "\t"),
-          handler_audit = FileOpen("audit/" + id + ".csv", FILE_READ|FILE_WRITE|FILE_CSV|FILE_COMMON, "\t");
-
-   string id_tabulated  = id,
-          profit_rate   = DoubleToString(stats[2] / stats[0], 3),
-          balance_final = DoubleToString(stats[6], 2);
-
-   StringReplace(id_tabulated,    "_", "\t");
-   StringReplace(profit_rate,     ".", ",");
-   StringReplace(balance_final,   ".", ",");
-   StringReplace(balance_partial, ".", ",");
-
-   FileWrite(handler_stats, "-invalid_row-", id_tabulated, id, stats[0], stats[1], stats[2], profit_rate, stats[4], stats[5], balance_final, balance_partial);
-
-   for(int i = 0; i < ArraySize(audit); i++) FileWrite(handler_audit, audit[i]);
-
-   FileClose(handler_audit);
-   FileClose(handler_stats);
   }
 }

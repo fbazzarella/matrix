@@ -17,8 +17,8 @@ private:
             price_lower;
 
    void     InitSettings(void);
-   bool     TryToClose(MqlTick &tick, double &stats[], string &audit[], string &balance_partial, bool forced);
-   bool     Close(string side, double price_closed, double loss_higher, double balance, double &stats[], string &audit[], string &balance_partial);
+   bool     TryToClose(MqlTick &tick, double &stats[], string &audit[], string &balance_chain, bool forced);
+   bool     Close(string side, double price_closed, double loss_higher, double balance, double &stats[], string &audit[], string &balance_chain);
    double   CalculateFinalValue(double price_difference);
    void     PrintAuditToLog(double price_closed, double balance, double loss_higher, string side, double &stats[]);
    void     DumpAudit(double price_closed, double balance, double loss_higher, string side, double &stats[], string &audit[]);
@@ -26,15 +26,15 @@ public:
             Position(void){ InitSettings(); };
            ~Position(void){};
 
-   bool     Open(string _positions_id, double price_to_open, double _price_for_loss, double _price_for_profit, double &stats[]);
-   bool     OnTick(MqlTick &tick, double &stats[], string &audit[], string &balance_partial);
-   bool     ForceToClose(MqlTick &tick, double &stats[], string &audit[], string &balance_partial);
+   bool     Open(string _positions_id, int side, double price_to_open, double _price_for_loss, double _price_for_profit, int address_part0, int address_part1, double &stats[]);
+   bool     OnTick(MqlTick &tick, double &stats[], string &audit[], string &balance_chain);
+   bool     ForceToClose(MqlTick &tick, double &stats[], string &audit[], string &balance_chain);
 
    bool     IsClosed(void){ return state == 0; };
    bool     IsOpened(void){ return state == 1; };
   };
 
-bool Position::Open(string _positions_id, double price_to_open, double _price_for_loss, double _price_for_profit, double &stats[])
+bool Position::Open(string _positions_id, int side, double price_to_open, double _price_for_loss, double _price_for_profit, int address_part0, int address_part1, double &stats[])
   {
    if(IsOpened()) return false;
 
@@ -52,27 +52,31 @@ bool Position::Open(string _positions_id, double price_to_open, double _price_fo
    stats[3] += 1; // opened
    stats[4]  = MathMax(stats[3], stats[4]); // opened_max
 
+   string address_position = (string)address_part0 + "." + (string)address_part1;
+
+   book.PlaceOrders(address_position, price_for_loss, price_for_profit + (side * symbol_step));
+
    return true;
   }
 
-bool Position::OnTick(MqlTick &tick, double &stats[], string &audit[], string &balance_partial)
+bool Position::OnTick(MqlTick &tick, double &stats[], string &audit[], string &balance_chain)
   {
    if(IsClosed()) return false;
 
    price_higher = MathMax(tick.ask, price_higher);
    price_lower  = MathMin(tick.bid, price_lower);
 
-   TryToClose(tick, stats, audit, balance_partial);
+   TryToClose(tick, stats, audit, balance_chain);
 
    return true;
   }
 
-bool Position::ForceToClose(MqlTick &tick, double &stats[], string &audit[], string &balance_partial)
+bool Position::ForceToClose(MqlTick &tick, double &stats[], string &audit[], string &balance_chain)
   {
-   return TryToClose(tick, stats, audit, balance_partial, true);
+   return TryToClose(tick, stats, audit, balance_chain, true);
   }
 
-bool Position::TryToClose(MqlTick &tick, double &stats[], string &audit[], string &balance_partial, bool forced = false)
+bool Position::TryToClose(MqlTick &tick, double &stats[], string &audit[], string &balance_chain, bool forced = false)
   {
    if(IsClosed()) return false;
 
@@ -107,12 +111,12 @@ bool Position::TryToClose(MqlTick &tick, double &stats[], string &audit[], strin
       balance     = price_closed - price_opened;
      }
 
-   if(price_closed > 0) return Close(side, price_closed, loss_higher, balance, stats, audit, balance_partial);
+   if(price_closed > 0) return Close(side, price_closed, loss_higher, balance, stats, audit, balance_chain);
    
    return false;
   }
 
-bool Position::Close(string side, double price_closed, double loss_higher, double balance, double &stats[], string &audit[], string &balance_partial)
+bool Position::Close(string side, double price_closed, double loss_higher, double balance, double &stats[], string &audit[], string &balance_chain)
   {
    if(IsClosed()) return false;
 
@@ -127,7 +131,7 @@ bool Position::Close(string side, double price_closed, double loss_higher, doubl
    stats[3] -= 1; // opened
    stats[6] += balance; // final_balance
    
-   StringConcatenate(balance_partial, balance_partial, (string)stats[6] + "\t");
+   StringConcatenate(balance_chain, balance_chain, (string)stats[6] + "\t");
 
    // PrintAuditToLog(price_closed, balance, loss_higher, side, stats);
    DumpAudit(price_closed, balance, loss_higher, side, stats, audit);
@@ -179,8 +183,9 @@ void Position::DumpAudit(double price_closed, double balance, double loss_higher
    StringReplace(_loss_higher,   ".", ",");
    StringReplace(_balance_final, ".", ",");
 
-   StringConcatenate(_audit_chain, "-invalid_row-", "\t", positions_id, "\t", time_opened, "\t", time_closed, "\t", time_difference, "\t",
-                     side, "\t", _price_opened, "\t", _price_closed, "\t", _balance, "\t", _loss_higher, "\t", _balance_final);
+   StringConcatenate(_audit_chain, "-invalid_row-", "\t", positions_id, "\t", time_opened,
+      "\t", time_closed, "\t", time_difference, "\t", side, "\t", _price_opened, "\t",
+      _price_closed, "\t", _balance, "\t", _loss_higher, "\t", _balance_final);
 
    ArrayResize(audit, size + 1);
    
