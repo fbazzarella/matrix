@@ -27,6 +27,7 @@ public:
    void     OnTick(MqlTick &tick, int address_part2);
    bool     CloseAll(MqlTick &tick);
    string   GetStats(void);
+   void     PrintAuditToFile(void);
    void     PrintStatsToLog(void);
   };
 
@@ -92,22 +93,35 @@ void Positions::InitStats(void)
 
 string Positions::GetStats(void)
   {
-   string id_tabulated  = id,
-          profit_rate   = DoubleToString(stats[2] / stats[0], 3),
-          balance_final = DoubleToString(stats[6], 2),
-          stats_chain   = "invalid";
+   string id_tabulated = id,
+          prices,
+          stats_chain;
 
-   StringReplace(id_tabulated,  "_", "\t");
-   StringReplace(profit_rate,   ".", ",");
-   StringReplace(balance_final, ".", ",");
-   StringReplace(balance_chain, ".", ",");
+   StringReplace(id_tabulated, "_", "\t");
 
-   StringConcatenate(stats_chain, stats_chain, "\t", id_tabulated, "\t", id, "\t",
+   StringConcatenate(prices, DoubleToString(stats[2] / stats[0], 3), "\t",
+      DoubleToString(stats[6], 2), "\t", balance_chain);
+
+   StringReplace(prices, ".", ",");
+
+   StringConcatenate(stats_chain, "invalid", "\t", id_tabulated, "\t", id, "\t",
       DoubleToString(stats[0], 0), "\t", DoubleToString(stats[1], 0), "\t",
-      DoubleToString(stats[2], 0), "\t", profit_rate, "\t", DoubleToString(stats[4], 0), "\t",
-      DoubleToString(stats[5], 0), "\t", balance_final, "\t", balance_chain);
+      DoubleToString(stats[2], 0), "\t", DoubleToString(stats[4], 0), "\t",
+      DoubleToString(stats[5], 0), "\t", prices);
 
    return stats_chain;
+  }
+
+void Positions::PrintAuditToFile(void)
+  {
+   int handler_file_audit = FileOpen("audit/" + id + ".csv", FILE_READ|FILE_WRITE|FILE_CSV|FILE_COMMON, "\t");
+
+   FileWrite(handler_file_audit, "invalid", "Time Opened", "Time Closed", "Time Diff", "Side", "Price for Loss",
+      "Price Opened", "Price for Profit", "Price Closed", "Bid", "Last", "Ask", "Balance", "Final Balance", "Higher Loss (!)");
+
+   for(int i = 0; i < ArraySize(audit); i++) FileWrite(handler_file_audit, audit[i]);
+
+   FileClose(handler_file_audit);
   }
 
 void Positions::PrintStatsToLog(void)

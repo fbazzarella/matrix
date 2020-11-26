@@ -18,10 +18,10 @@ private:
 
    void     InitSettings(void);
    bool     TryToClose(MqlTick &tick, double &stats[], string &audit[], string &balance_chain, bool forced);
-   bool     Close(string side, double price_closed, double loss_higher, double balance, double &stats[], string &audit[], string &balance_chain);
+   bool     Close(MqlTick &tick, string side, double price_closed, double loss_higher, double balance, double &stats[], string &audit[], string &balance_chain);
    double   CalculateFinalValue(double price_difference);
-   void     PrintAuditToLog(double price_closed, double balance, double loss_higher, string side, double &stats[]);
-   void     DumpAudit(double price_closed, double balance, double loss_higher, string side, double &stats[], string &audit[]);
+   void     PrintAuditToLog(MqlTick &tick, double price_closed, double balance, double loss_higher, string side, double &stats[]);
+   void     DumpAudit(MqlTick &tick, double price_closed, double balance, double loss_higher, string side, double &stats[], string &audit[]);
 public:
             Position(void){ InitSettings(); };
            ~Position(void){};
@@ -111,12 +111,12 @@ bool Position::TryToClose(MqlTick &tick, double &stats[], string &audit[], strin
       balance     = price_closed - price_opened;
      }
 
-   if(price_closed > 0) return Close(side, price_closed, loss_higher, balance, stats, audit, balance_chain);
+   if(price_closed > 0) return Close(tick, side, price_closed, loss_higher, balance, stats, audit, balance_chain);
    
    return false;
   }
 
-bool Position::Close(string side, double price_closed, double loss_higher, double balance, double &stats[], string &audit[], string &balance_chain)
+bool Position::Close(MqlTick &tick, string side, double price_closed, double loss_higher, double balance, double &stats[], string &audit[], string &balance_chain)
   {
    if(IsClosed()) return false;
 
@@ -133,8 +133,8 @@ bool Position::Close(string side, double price_closed, double loss_higher, doubl
    
    StringConcatenate(balance_chain, balance_chain, (string)stats[6] + "\t");
 
-   // PrintAuditToLog(price_closed, balance, loss_higher, side, stats);
-   DumpAudit(price_closed, balance, loss_higher, side, stats, audit);
+   // PrintAuditToLog(tick, price_closed, balance, loss_higher, side, stats);
+   DumpAudit(tick, price_closed, balance, loss_higher, side, stats, audit);
 
    return true;
   }
@@ -153,7 +153,7 @@ double Position::CalculateFinalValue(double price_difference)
    return price_difference * symbol_factor - symbol_cost;
   }
 
-void Position::PrintAuditToLog(double price_closed, double balance, double loss_higher, string side, double &stats[])
+void Position::PrintAuditToLog(MqlTick &tick, double price_closed, double balance, double loss_higher, string side, double &stats[])
   {
    Print(positions_id + ": " + side +
          " position opened at "      + DoubleToString(price_opened, 1) +
@@ -166,29 +166,23 @@ void Position::PrintAuditToLog(double price_closed, double balance, double loss_
          " partial balance of "      + DoubleToString(stats[6],     2) + " BRL." );
   }
 
-void Position::DumpAudit(double price_closed, double balance, double loss_higher, string side, double &stats[], string &audit[])
+void Position::DumpAudit(MqlTick &tick, double price_closed, double balance, double loss_higher, string side, double &stats[], string &audit[])
   {
-   int    size            = ArraySize(audit);
-   uint   time_difference = (uint)(time_closed - time_opened);
-   string _price_opened   = DoubleToString(price_opened, 2),
-          _price_closed   = DoubleToString(price_closed, 2),
-          _balance        = DoubleToString(balance,      2),
-          _loss_higher    = DoubleToString(loss_higher,  2),
-          _balance_final  = DoubleToString(stats[6],     2),
-          _audit_chain;
+   int    size      = ArraySize(audit);
+   uint   time_diff = (uint)(time_closed - time_opened);
+   string prices,
+          audit_chain;
 
-   StringReplace(_price_opened,  ".", ",");
-   StringReplace(_price_closed,  ".", ",");
-   StringReplace(_balance,       ".", ",");
-   StringReplace(_loss_higher,   ".", ",");
-   StringReplace(_balance_final, ".", ",");
+   StringConcatenate(prices, price_for_loss, "\t", price_opened, "\t", price_for_profit, "\t", price_closed, "\t",
+      tick.bid, "\t", tick.last, "\t", tick.ask, "\t", balance, "\t", stats[6], "\t", loss_higher);
 
-   StringConcatenate(_audit_chain, "-invalid_row-", "\t", positions_id, "\t", time_opened,
-      "\t", time_closed, "\t", time_difference, "\t", side, "\t", _price_opened, "\t",
-      _price_closed, "\t", _balance, "\t", _loss_higher, "\t", _balance_final);
+   StringReplace(prices, ".", ",");
+
+   StringConcatenate(audit_chain, "invalid", "\t", time_opened, "\t",
+      time_closed, "\t", time_diff, "\t", side, "\t", prices);
 
    ArrayResize(audit, size + 1);
    
-   audit[size] = _audit_chain;
+   audit[size] = audit_chain;
   }
 }
