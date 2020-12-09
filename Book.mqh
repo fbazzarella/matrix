@@ -18,7 +18,7 @@ public:
              Book(void){ SetCollectionSize(0); };
             ~Book(void){};
 
-   void      ResetBook(void){ SetCollectionSize(0); };
+   void      Reset(void){ SetCollectionSize(0); };
    void      SetPriceBase(double price){ price_base = price_last = price; };
    void      SetTickSize(double size){ tick_size = size; };
    void      PlaceOrders(string address_position, double price_first, double price_second);

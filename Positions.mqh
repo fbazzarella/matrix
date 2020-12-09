@@ -5,7 +5,7 @@ namespace Paibot
 class Positions
   {
 private:
-   Position positions[];
+   Position position[];
    int      collection_size;
    string   id;
    bool     async;
@@ -23,7 +23,7 @@ public:
 
    void     SetId(string _id){ id = _id; StringReplace(id, " ", "_"); };
    void     SetAsync(bool _async){ async = _async; };
-   bool     Open(int side, double price_to_open, double distance_to_loss, double distance_to_profit, int address_part1);
+   bool     Open(int side, double price_to_open, double distance_to_loss, double distance_to_profit, int address_part0, int address_part1);
    void     OnTick(MqlTick &tick, int address_part2);
    bool     CloseAll(MqlTick &tick);
    string   GetStats(void);
@@ -31,7 +31,7 @@ public:
    void     PrintStatsToLog(void);
   };
 
-bool Positions::Open(int side, double price_to_open, double distance_to_loss, double distance_to_profit, int address_part1)
+bool Positions::Open(int side, double price_to_open, double distance_to_loss, double distance_to_profit, int address_part0, int address_part1)
   {
    if(id == NULL || id == ""){ Print("ERROR: Collection id not defined."); return false; };
 
@@ -44,12 +44,12 @@ bool Positions::Open(int side, double price_to_open, double distance_to_loss, do
    double price_for_loss   = side == -1 ? price_to_open + distance_to_loss   : price_to_open - distance_to_loss,
           price_for_profit = side == -1 ? price_to_open - distance_to_profit : price_to_open + distance_to_profit;
 
-   return positions[next_place].Open(id, side, price_to_open, price_for_loss, price_for_profit, address_part1, next_place, stats);
+   return position[next_place].Open(id, side, price_to_open, price_for_loss, price_for_profit, address_part0, address_part1, next_place, stats);
   }
 
 void Positions::OnTick(MqlTick &tick, int address_part2)
   {
-   for(int i = 0; i < collection_size; i++) positions[address_part2].OnTick(tick, stats, audit, balance_chain);
+   for(int i = 0; i < collection_size; i++) position[address_part2].OnTick(tick, stats, audit, balance_chain);
   }
 
 bool Positions::CloseAll(MqlTick &tick)
@@ -58,7 +58,7 @@ bool Positions::CloseAll(MqlTick &tick)
 
    stats[5] += stats[3]; // opened_aborted
 
-   for(int i = 0; i < collection_size; i++) positions[i].ForceToClose(tick, stats, audit, balance_chain);
+   for(int i = 0; i < collection_size; i++) position[i].ForceToClose(tick, stats, audit, balance_chain);
 
    return true;
   }
@@ -67,7 +67,7 @@ int Positions::GetNextPlace(void)
   {
    CheckCollectionSize();
 
-   int i = 0; while(positions[i].IsOpened()) i++;
+   int i = 0; while(position[i].IsOpened()) i++;
 
    return i;
   }
@@ -81,7 +81,7 @@ void Positions::CheckCollectionSize(void)
 
 void Positions::SetCollectionSize(int size)
   {
-   ArrayResize(positions, collection_size = size);
+   ArrayResize(position, collection_size = size);
   }
 
 void Positions::InitStats(void)
@@ -94,12 +94,15 @@ void Positions::InitStats(void)
 string Positions::GetStats(void)
   {
    string id_tabulated = id,
+          profit_rate  = "0",
           prices,
           stats_chain;
 
    StringReplace(id_tabulated, "_", "\t");
 
-   StringConcatenate(prices, DoubleToString(stats[2] / stats[0], 3), "\t",
+   if(stats[0] > 0) profit_rate = DoubleToString(stats[2] / stats[0], 3);
+
+   StringConcatenate(prices, profit_rate, "\t",
       DoubleToString(stats[6], 2), "\t", balance_chain);
 
    StringReplace(prices, ".", ",");

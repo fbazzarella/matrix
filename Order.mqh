@@ -21,8 +21,8 @@ void Order::OnTick(MqlTick &tick)
    
    StringSplit(address_position, StringGetCharacter(".", 0), address_parts);
 
-   positions[(int)address_parts[0]].OnTick(tick, (int)address_parts[1]);
-
+   main[(int)address_parts[0]].OnTick(tick, (int)address_parts[1], (int)address_parts[2]);
+   
    book.RemoveOrder(address_counterpart, address_position);
   }
 }

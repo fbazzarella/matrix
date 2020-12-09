@@ -26,7 +26,7 @@ public:
             Position(void){ InitSettings(); };
            ~Position(void){};
 
-   bool     Open(string _positions_id, int side, double price_to_open, double _price_for_loss, double _price_for_profit, int address_part0, int address_part1, double &stats[]);
+   bool     Open(string _positions_id, int side, double price_to_open, double _price_for_loss, double _price_for_profit, int address_part0, int address_part1, int address_part2, double &stats[]);
    bool     OnTick(MqlTick &tick, double &stats[], string &audit[], string &balance_chain);
    bool     ForceToClose(MqlTick &tick, double &stats[], string &audit[], string &balance_chain);
 
@@ -34,7 +34,7 @@ public:
    bool     IsOpened(void){ return state == 1; };
   };
 
-bool Position::Open(string _positions_id, int side, double price_to_open, double _price_for_loss, double _price_for_profit, int address_part0, int address_part1, double &stats[])
+bool Position::Open(string _positions_id, int side, double price_to_open, double _price_for_loss, double _price_for_profit, int address_part0, int address_part1, int address_part2, double &stats[])
   {
    if(IsOpened()) return false;
 
@@ -52,7 +52,7 @@ bool Position::Open(string _positions_id, int side, double price_to_open, double
    stats[3] += 1; // opened
    stats[4]  = MathMax(stats[3], stats[4]); // opened_max
 
-   string address_position = (string)address_part0 + "." + (string)address_part1;
+   string address_position = (string)address_part0 + "." + (string)address_part1 + "." + (string)address_part2;
 
    book.PlaceOrders(address_position, price_for_loss, price_for_profit + (side * symbol_step));
 
@@ -134,7 +134,7 @@ bool Position::Close(MqlTick &tick, string side, double price_closed, double los
    StringConcatenate(balance_chain, balance_chain, (string)stats[6] + "\t");
 
    // PrintAuditToLog(tick, price_closed, balance, loss_higher, side, stats);
-   DumpAudit(tick, price_closed, balance, loss_higher, side, stats, audit);
+   // DumpAudit(tick, price_closed, balance, loss_higher, side, stats, audit);
 
    return true;
   }
@@ -156,8 +156,8 @@ double Position::CalculateFinalValue(double price_difference)
 void Position::PrintAuditToLog(MqlTick &tick, double price_closed, double balance, double loss_higher, string side, double &stats[])
   {
    Print(positions_id + ": " + side +
-         " position opened at "      + DoubleToString(price_opened, 1) +
-         " and closed at "           + DoubleToString(price_closed, 1) +
+         " position opened at "      + DoubleToString(price_opened, 2) +
+         " and closed at "           + DoubleToString(price_closed, 2) +
          " with a balance of R$ "    + DoubleToString(balance,      2) +
          " and a higher loss of R$ " + DoubleToString(loss_higher,  2) +
          ". Total of "               + DoubleToString(stats[0],     0) +
