@@ -3,36 +3,44 @@ namespace Paibot
 class Position
   {
 private:
-   uchar    state;
-   double   symbol_factor,
-            symbol_step,
-            symbol_cost;
-   string   positions_id;
-   datetime time_opened,
-            time_closed;
-   double   price_opened,
-            price_for_loss,
-            price_for_profit,
-            price_higher,
-            price_lower;
+   uchar           state;
+   double          symbol_factor,
+                   symbol_step,
+                   symbol_cost;
+   string          positions_id;
+   datetime        time_opened,
+                   time_closed;
+   double          price_opened,
+                   price_for_loss,
+                   price_for_profit,
+                   price_higher,
+                   price_lower;
 
-   void     InitSettings(void);
-   bool     TryToClose(MqlTick &tick, double &stats[], string &audit[], string &balance_chain, bool forced);
-   bool     Close(MqlTick &tick, string side, double price_closed, double loss_higher, double balance, double &stats[], string &audit[], string &balance_chain);
-   double   CalculateFinalValue(double price_difference);
-   void     PrintAuditToLog(MqlTick &tick, double price_closed, double balance, double loss_higher, string side, double &stats[]);
-   void     DumpAudit(MqlTick &tick, double price_closed, double balance, double loss_higher, string side, double &stats[], string &audit[]);
+   bool            TryToClose(MqlTick &tick, double &stats[], string &audit[], string &balance_chain, bool forced);
+   bool            Close(MqlTick &tick, string side, double price_closed, double loss_higher, double balance, double &stats[], string &audit[], string &balance_chain);
+   double          CalculateFinalValue(double price_difference);
+   void            PrintAuditToLog(MqlTick &tick, double price_closed, double balance, double loss_higher, string side, double &stats[]);
+   void            DumpAudit(MqlTick &tick, double price_closed, double balance, double loss_higher, string side, double &stats[], string &audit[]);
 public:
-            Position(void){ InitSettings(); };
-           ~Position(void){};
+                   Position(void);
+                  ~Position(void){};
 
-   bool     Open(string _positions_id, int side, double price_to_open, double _price_for_loss, double _price_for_profit, int address_part0, int address_part1, int address_part2, double &stats[]);
-   bool     OnTick(MqlTick &tick, double &stats[], string &audit[], string &balance_chain);
-   bool     ForceToClose(MqlTick &tick, double &stats[], string &audit[], string &balance_chain);
+   bool            Open(string _positions_id, int side, double price_to_open, double _price_for_loss, double _price_for_profit, int address_part0, int address_part1, int address_part2, double &stats[]);
+   bool            OnTick(MqlTick &tick, double &stats[], string &audit[], string &balance_chain);
+   bool            ForceToClose(MqlTick &tick, double &stats[], string &audit[], string &balance_chain);
 
-   bool     IsClosed(void){ return state == 0; };
-   bool     IsOpened(void){ return state == 1; };
+   bool            IsClosed(void);
+   bool            IsOpened(void);
   };
+
+void Position::Position(void)
+  {
+   state = 0;
+
+   symbol_factor = 10;
+   symbol_step   = 0.5;
+   symbol_cost   = 2.4;
+  }
 
 bool Position::Open(string _positions_id, int side, double price_to_open, double _price_for_loss, double _price_for_profit, int address_part0, int address_part1, int address_part2, double &stats[])
   {
@@ -74,6 +82,15 @@ bool Position::OnTick(MqlTick &tick, double &stats[], string &audit[], string &b
 bool Position::ForceToClose(MqlTick &tick, double &stats[], string &audit[], string &balance_chain)
   {
    return TryToClose(tick, stats, audit, balance_chain, true);
+  }
+
+bool Position::IsClosed(void)
+  {
+   return state == 0;
+  }
+bool Position::IsOpened(void)
+  {
+   return state == 1;
   }
 
 bool Position::TryToClose(MqlTick &tick, double &stats[], string &audit[], string &balance_chain, bool forced = false)
@@ -137,15 +154,6 @@ bool Position::Close(MqlTick &tick, string side, double price_closed, double los
    // DumpAudit(tick, price_closed, balance, loss_higher, side, stats, audit);
 
    return true;
-  }
-
-void Position::InitSettings(void)
-  {
-   state = 0;
-
-   symbol_factor = 10;
-   symbol_step   = 0.5;
-   symbol_cost   = 2.4;
   }
 
 double Position::CalculateFinalValue(double price_difference)
