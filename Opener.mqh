@@ -14,16 +14,14 @@ private:
                    finish_time;
    double          loss[],
                    profit[];
-
    MqlTick         tick;
    PositionBucket  buckets[];
    int             buckets_size,
                    session_period,
                    tick_count;
-   string          format_double;
 
    string          GetFileName(void);
-   string          GetTestId(double loss, double profit);
+   string          GetOpenerId(double loss, double profit);
    int             GetSideFromMA(void);
    double          GetPriceFromMASide(int side);
 public:
@@ -42,7 +40,6 @@ void Opener::Opener(void)
    buckets_size   = 0;
    session_period = 0;
    tick_count     = 0;
-   format_double  = "%04.1f";
   }
 
 void Opener::OnInit(ENUM_TIMEFRAMES _timeframe, int _begin_time, int _finish_time, int _ma_short, int _ma_long, uint _ma_short_handler, uint _ma_long_handler, double &_loss[], double &_profit[])
@@ -64,24 +61,14 @@ void Opener::OnInit(ENUM_TIMEFRAMES _timeframe, int _begin_time, int _finish_tim
         {
          ArrayResize(buckets, ++buckets_size);
 
-         buckets[buckets_size - 1].SetProperties(GetTestId(__loss, __profit), async);
+         buckets[buckets_size - 1].SetProperties(GetOpenerId(__loss, __profit));
         }
      }
   }
 
 void Opener::OnDeinit(void)
   {
-   int handler_file_stats = FileOpen("stats/" + GetFileName() + ".csv", FILE_READ|FILE_WRITE|FILE_CSV|FILE_COMMON, "\t");
-
-   for(int i = 0; i < buckets_size; i++)
-     {
-      buckets[i].CloseAllPositions(tick);
-      // buckets[i].PrintAuditToFile();
-
-      FileWrite(handler_file_stats, buckets[i].GetStats());
-     }
-
-   FileClose(handler_file_stats);
+   for(int i = 0; i < buckets_size; i++) buckets[i].CloseAllPositions(tick);
   }
 
 void Opener::OnTick(MqlTick &_tick)
@@ -104,18 +91,15 @@ void Opener::OnTimer(int address_part0)
 
    if(now.min % (int)timeframe == 0 && session_period == 1 && tick_count > 0)
      {
-      int    side  = GetSideFromMA();
+      int    i     = 0,
+             side  = GetSideFromMA();
       double price = GetPriceFromMASide(side);
-
-      int i = 0;
 
       for(double __loss = loss[0]; __loss <= loss[1]; __loss += loss[2])
         {
          for(double __profit = profit[0]; __profit <= profit[1]; __profit += profit[2])
            {
-            buckets[i].OpenPosition(side, price, __loss, __profit, address_part0, i);
-            
-            i++;
+            buckets[i++].OpenPosition(side, price, __loss, __profit, address_part0, i);
            }
         }
 
@@ -125,24 +109,17 @@ void Opener::OnTimer(int address_part0)
    else if(session_period == 3) for(int i = 0; i < buckets_size; i++) buckets[i].CloseAllPositions(tick);
   }
 
-string Opener::GetFileName(void)
+string Opener::GetOpenerId(double _loss, double _profit)
   {
-   string name;
+   string opener_id,
+          format = "%04.1f";
 
-   StringConcatenate(name, StringFormat(format_double, timeframe), "_",
-      StringFormat(format_double, begin_time), "_", StringFormat(format_double, finish_time), "_",
-      StringFormat(format_double, ma_short), "_", StringFormat(format_double, ma_long));
+   StringConcatenate(opener_id, StringFormat(format, timeframe), "_",
+      StringFormat(format, begin_time), "_",StringFormat(format, finish_time), "_",
+      StringFormat(format, ma_short), "_", StringFormat(format, ma_long), "_",
+      StringFormat(format, _loss), "_", StringFormat(format, _profit));
 
-   return name;
-  }
-
-string Opener::GetTestId(double _loss, double _profit)
-  {
-   string id;
-
-   StringConcatenate(id, GetFileName(), "_", StringFormat(format_double, _loss), "_", StringFormat(format_double, _profit));
-
-   return id;
+   return opener_id;
   }
 
 int Opener::GetSideFromMA(void)
