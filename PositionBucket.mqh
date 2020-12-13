@@ -11,6 +11,7 @@ private:
    Position        positions[];
    int             positions_size;
 
+   bool            CheckProperties(void);
    int             GetNextPlace(void);
    void            CheckPositionsSize(void);
    void            SetPositionsSize(int size);
@@ -37,18 +38,11 @@ void PositionBucket::SetProperties(string _id)
 
 void PositionBucket::OpenPosition(int side, double price_to_open, double distance_to_loss, double distance_to_profit, int address_part0, int address_part1)
   {
-   if(id == NULL || id == ""){ Print("ERROR: Bucket id not defined."); return; };
-
-   if((side != -1 && side != 1) || price_to_open == 0) return;
-
-   if(!async && logger.GetValue(3) == 1) return;
+   if(!CheckProperties() || (side != -1 && side != 1) || price_to_open == 0 || (!async && logger.GetValue(OPENED) == 1)) return;
 
    int next_place = GetNextPlace();
 
-   double price_for_loss   = side == -1 ? price_to_open + distance_to_loss   : price_to_open - distance_to_loss,
-          price_for_profit = side == -1 ? price_to_open - distance_to_profit : price_to_open + distance_to_profit;
-
-   positions[next_place].Open(side, price_to_open, price_for_loss, price_for_profit, address_part0, address_part1, next_place);
+   positions[next_place].Open(side, price_to_open, distance_to_loss, distance_to_profit, address_part0, address_part1, next_place);
   }
 
 void PositionBucket::OnTick(MqlTick &tick, int address_part2)
@@ -58,11 +52,18 @@ void PositionBucket::OnTick(MqlTick &tick, int address_part2)
 
 void PositionBucket::CloseAllPositions(MqlTick &tick)
   {
-   if(logger.GetValue(3) == 0) return;
+   if(logger.GetValue(OPENED) == 0) return;
 
-   logger.Increment(5, logger.GetValue(3));
+   logger.Increment(OPENED_ABORTED, logger.GetValue(OPENED));
 
    for(int i = 0; i < positions_size; i++) positions[i].ForceToClose(tick);
+  }
+
+bool PositionBucket::CheckProperties(void)
+  {
+   if(id == NULL || id == ""){ Print("ERROR: Bucket id not defined."); return false; };
+
+   return true;
   }
 
 int PositionBucket::GetNextPlace(void)
@@ -76,7 +77,7 @@ int PositionBucket::GetNextPlace(void)
 
 void PositionBucket::CheckPositionsSize(void)
   {
-   if(async && logger.GetValue(3) == positions_size) SetPositionsSize(positions_size * 2);
+   if(async && logger.GetValue(OPENED) == positions_size) SetPositionsSize(positions_size * 2);
   }
 
 void PositionBucket::SetPositionsSize(int size)

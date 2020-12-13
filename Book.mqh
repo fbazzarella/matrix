@@ -8,9 +8,10 @@ private:
    OrderBucket     buckets[];
    int             buckets_size;
    double          price_base,
-                   price_last,
+                   price_last_prev,
                    tick_size;
 
+   bool            CheckProperties(void);
    int             GetPlace(double price);
    void            CheckBucketsSize(int i);
    void            SetBucketsSize(int size);
@@ -32,13 +33,14 @@ void Book::Book(void)
 
 void Book::SetProperties(double _price_base, double _tick_size)
   {
-   price_base = _price_base;
-   price_last = _price_base;
+   price_base = price_last_prev = _price_base;
    tick_size  = _tick_size;
   }
 
 void Book::PlaceOrders(string address_position, double price_first, double price_second)
   {
+   if(!CheckProperties()) return;
+
    int place_first  = GetPlace(price_first),
        place_second = GetPlace(price_second);
 
@@ -48,21 +50,35 @@ void Book::PlaceOrders(string address_position, double price_first, double price
 
 void Book::OnTick(MqlTick &tick)
   {
-   if(price_base == NULL || tick_size == NULL){ Print("ERROR: Base Price and/or Tick Size not defined."); return; };
+   if(!CheckProperties() || price_last_prev == tick.last || tick.last == 0) return;
 
-   if(price_last == tick.last || tick.last == 0) return;
+   double higher = MathMax(price_last_prev, tick.last),
+          lower  = MathMin(price_last_prev, tick.last);
 
-   double higher = MathMax(price_last, tick.last),
-          lower  = MathMin(price_last, tick.last);
+   for(double p = lower; p <= higher; p += tick_size) if(p != price_last_prev) buckets[GetPlace(p)].OnTick(tick);
 
-   for(double p = lower; p <= higher; p += tick_size) if(p != price_last) buckets[GetPlace(p)].OnTick(tick);
-
-   price_last = tick.last;
+   price_last_prev = tick.last;
   }
 
 void Book::RemoveOrder(int address_counterpart, string address_position)
   {
+   if(!CheckProperties()) return;
+
    buckets[address_counterpart].RemoveOrder(address_position);
+  }
+
+void Book::Reset(void)
+  {
+   if(!CheckProperties()) return;
+
+   SetBucketsSize(0);
+  }
+
+bool Book::CheckProperties(void)
+  {
+   if(price_base == NULL || tick_size == NULL){ Print("ERROR: Base Price and/or Tick Size not defined."); return false; };
+
+   return true;
   }
 
 int Book::GetPlace(double price)
@@ -84,10 +100,5 @@ void Book::CheckBucketsSize(int i)
 void Book::SetBucketsSize(int size)
   {
    ArrayResize(buckets, buckets_size = size);
-  }
-
-void Book::Reset(void)
-  {
-   SetBucketsSize(0);
   }
 }

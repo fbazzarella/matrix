@@ -1,19 +1,30 @@
+enum ENUM_LOGGER_KEY
+  {
+   COUNT          = 0,
+   WITH_LOSS      = 1,
+   WITH_PROFIT    = 2,
+   OPENED         = 3,
+   OPENED_MAX     = 4,
+   OPENED_ABORTED = 5,
+   BALANCE_FINAL  = 6
+  };
+
 namespace Paibot
 {
 class Logger
   {
 private:
    string          parent_id;
-   double          stats[7]; // 0-count, 1-with_loss, 2-with_profit, 3-opened, 4-opened_max, 5-opened_aborted, 6-balance_final
+   double          stats[7];
    string          balance_chain;
 public:
                    Logger(void);
                   ~Logger(void){};
 
    void            SetParentId(string _parent_id);
-   double          GetValue(int i);
-   void            Increment(int i, double value);
-   void            KeepMax(int i, double value);
+   double          GetValue(ENUM_LOGGER_KEY key);
+   void            Increment(ENUM_LOGGER_KEY key, double value);
+   void            KeepMax(ENUM_LOGGER_KEY key, double value);
    void            AddBalance(double balance);
    void            Audit(void);
   };
@@ -30,19 +41,19 @@ void Logger::SetParentId(string _parent_id)
    parent_id = _parent_id;
   }
 
-double Logger::GetValue(int i)
+double Logger::GetValue(ENUM_LOGGER_KEY key)
   {
-   return stats[i];
+   return stats[key];
   }
 
-void Logger::Increment(int i, double value)
+void Logger::Increment(ENUM_LOGGER_KEY key, double value)
   {
-   stats[i] += value;
+   stats[key] += value;
   }
 
-void Logger::KeepMax(int i, double value)
+void Logger::KeepMax(ENUM_LOGGER_KEY key, double value)
   {
-   stats[i] = MathMax(stats[i], value);
+   stats[key] = MathMax(stats[key], value);
   }
 
 void Logger::AddBalance(double balance)
