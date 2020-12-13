@@ -47,7 +47,9 @@ void PositionBucket::OpenPosition(int side, double price_to_open, double distanc
 
 void PositionBucket::OnTick(MqlTick &tick, int address_part2)
   {
-   for(int i = 0; i < positions_size; i++) positions[address_part2].OnTick(tick);
+   positions[address_part2].OnTick(tick);
+
+   if(print_data_compiled) logger.PrintDataCompiled();
   }
 
 void PositionBucket::CloseAllPositions(MqlTick &tick)

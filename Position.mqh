@@ -132,6 +132,7 @@ void Position::Close(MqlTick &tick, string side, double price_closed, double bal
    logger.Increment(balance < 0 ? WITH_LOSS : WITH_PROFIT, 1);
    logger.AddBalance(balance);
    
-   logger.Audit();
+   if(add_data_raw)   logger.AddDataRaw(tick, side, price_closed, balance, time_closed, time_opened, price_opened, price_for_loss, price_for_profit);
+   if(print_data_raw) logger.PrintDataRaw(tick, side, price_closed, balance, time_closed, time_opened, price_opened, price_for_loss, price_for_profit);
   }
 }
