@@ -14,7 +14,7 @@ namespace Paibot
 class Logger
   {
 private:
-   string          parent_id;
+   string          id_parent;
    double          data_compiled[7];
    string          data_balance_chain,
                    data_raw[];
@@ -23,14 +23,19 @@ public:
                    Logger(void);
                   ~Logger(void){};
 
-   void            SetParentId(string _parent_id);
+   void            SetParentId(string _id_parent);
    double          GetValue(ENUM_LOGGER_KEY key);
+   string          GetValue(ENUM_LOGGER_KEY key, int precision);
+   double          GetRate(ENUM_LOGGER_KEY key_numerator, ENUM_LOGGER_KEY key_denominator);
+   string          GetRate(ENUM_LOGGER_KEY key_numerator, ENUM_LOGGER_KEY key_denominator, int precision);
    void            Increment(ENUM_LOGGER_KEY key, double value);
    void            KeepMax(ENUM_LOGGER_KEY key, double value);
    void            AddBalance(double balance);
    void            AddDataRaw(MqlTick &tick, string side, double price_closed, double balance, datetime time_closed, datetime time_opened, double price_opened, double price_for_loss, double price_for_profit);
    void            PrintDataRaw(MqlTick &tick, string side, double price_closed, double balance, datetime time_closed, datetime time_opened, double price_opened, double price_for_loss, double price_for_profit);
    void            PrintDataCompiled(void);
+   void            DumpDataRaw(int handler);
+   void            DumpDataCompiled(int handler);
   };
 
 void Logger::Logger(void)
@@ -41,14 +46,31 @@ void Logger::Logger(void)
    data_raw_size      = 0;
   }
 
-void Logger::SetParentId(string _parent_id)
+void Logger::SetParentId(string _id_parent)
   {
-   parent_id = _parent_id;
+   id_parent = _id_parent;
   }
 
 double Logger::GetValue(ENUM_LOGGER_KEY key)
   {
    return data_compiled[key];
+  }
+
+string Logger::GetValue(ENUM_LOGGER_KEY key, int precision)
+  {
+   return DoubleToString(data_compiled[key], precision);
+  }
+
+double Logger::GetRate(ENUM_LOGGER_KEY key_numerator, ENUM_LOGGER_KEY key_denominator)
+  {
+   double denominator = data_compiled[key_denominator];
+
+   return denominator != 0 ? data_compiled[key_numerator] / denominator * 100 : 0;
+  }
+
+string Logger::GetRate(ENUM_LOGGER_KEY key_numerator, ENUM_LOGGER_KEY key_denominator, int precision)
+  {
+   return DoubleToString(GetRate(key_numerator, key_denominator), precision);
   }
 
 void Logger::Increment(ENUM_LOGGER_KEY key, double value)
@@ -74,8 +96,8 @@ void Logger::AddDataRaw(MqlTick &tick, string side, double price_closed, double 
    string prices_chain,
           data_raw_chain;
 
-   StringConcatenate(prices_chain, price_for_loss, "\t", price_opened, "\t", price_for_profit, "\t",
-      price_closed, "\t", tick.bid, "\t", tick.last, "\t", tick.ask, "\t", balance, "\t", data_compiled[BALANCE_FINAL]);
+   StringConcatenate(prices_chain, price_for_loss, "\t", price_opened, "\t", price_for_profit, "\t", price_closed, "\t",
+      tick.bid, "\t", tick.last, "\t", tick.ask, "\t", balance, "\t", data_compiled[BALANCE_FINAL]);
 
    StringReplace(prices_chain, ".", ",");
 
@@ -89,31 +111,59 @@ void Logger::AddDataRaw(MqlTick &tick, string side, double price_closed, double 
 
 void Logger::PrintDataRaw(MqlTick &tick, string side, double price_closed, double balance, datetime time_closed, datetime time_opened, double price_opened, double price_for_loss, double price_for_profit)
   {
-   Print(parent_id + ": " + side +
+   Print(id_parent + ": " + side +
       " position opened at "      + DoubleToString(price_opened, 2) +
       " and closed at "           + DoubleToString(price_closed, 2) +
-      " with a balance of R$ "    + DoubleToString(balance,      2) +
-      ". Total of "               + DoubleToString(data_compiled[COUNT],         0) +
-      " positions and "           + DoubleToString(data_compiled[OPENED],        0) +
+      " with a balance of R$ "    + DoubleToString(balance, 2) +
+      ". Total of "               + GetValue(COUNT, 0) +
+      " positions and "           + GetValue(OPENED, 0) +
       " currently opened with a"  +
-      " partial balance of "      + DoubleToString(data_compiled[BALANCE_FINAL], 2) + " BRL." );
+      " partial balance of "      + GetValue(BALANCE_FINAL, 2) + " BRL." );
   }
 
 void Logger::PrintDataCompiled(void)
   {
    if(data_compiled[COUNT] > 0)
      {
-      Print("Position stats for '" + parent_id + "':");
-      Print("| count          " + DoubleToString(data_compiled[COUNT],          0));
-      Print("| with loss      " + DoubleToString(data_compiled[WITH_LOSS],      0) +
-                           " (" + DoubleToString(data_compiled[WITH_LOSS]   / data_compiled[COUNT] * 100, 1) + "%)");
-      Print("| with profit    " + DoubleToString(data_compiled[WITH_PROFIT],    0) +
-                           " (" + DoubleToString(data_compiled[WITH_PROFIT] / data_compiled[COUNT] * 100, 1) + "%)");
-      Print("| opened         " + DoubleToString(data_compiled[OPENED],         0));
-      Print("| opened max     " + DoubleToString(data_compiled[OPENED_MAX],     0));
-      Print("| opened aborted " + DoubleToString(data_compiled[OPENED_ABORTED], 0));
-      Print("| final balance  " + DoubleToString(data_compiled[BALANCE_FINAL],  2) + " BRL");
+      Print("Position stats for '" + id_parent + "':");
+      Print("| count          " + GetValue(COUNT, 0));
+      Print("| with loss      " + GetValue(WITH_LOSS, 0) + " (" + GetRate(WITH_LOSS, COUNT, 1) + "%)");
+      Print("| with profit    " + GetValue(WITH_PROFIT, 0) + " (" + GetRate(WITH_PROFIT, COUNT, 1) + "%)");
+      Print("| opened         " + GetValue(OPENED, 0));
+      Print("| opened max     " + GetValue(OPENED_MAX, 0));
+      Print("| opened aborted " + GetValue(OPENED_ABORTED, 0));
+      Print("| final balance  " + GetValue(BALANCE_FINAL, 2) + " BRL");
       Print(""); Print(""); Print(""); Print("");
      }
+  }
+
+void Logger::DumpDataRaw(int handler)
+  {
+   FileWrite(handler, "invalid", "Time Opened", "Time Closed", "Time Diff", "Side", "Price for Loss",
+      "Price Opened", "Price for Profit", "Price Closed", "Bid", "Last", "Ask", "Balance", "Final Balance");
+
+   for(int i = 0; i < data_raw_size; i++) FileWrite(handler, data_raw[i]);
+  }
+
+void Logger::DumpDataCompiled(int handler)
+  {
+   string id_tabulated = id_parent,
+          profit_rate  = "0",
+          prices_chain,
+          data_compiled_chain;
+
+   StringReplace(id_tabulated, "_", "\t");
+
+   if(data_compiled[COUNT] > 0) profit_rate = GetRate(WITH_PROFIT, COUNT, 3);
+
+   StringConcatenate(prices_chain, profit_rate, "\t", GetValue(BALANCE_FINAL, 2), "\t", data_balance_chain);
+
+   StringReplace(prices_chain, ".", ",");
+
+   StringConcatenate(data_compiled_chain, "invalid", "\t", id_tabulated, "\t", id_parent, "\t",
+     GetValue(COUNT, 0), "\t", GetValue(WITH_LOSS, 0), "\t", GetValue(WITH_PROFIT, 0), "\t",
+     GetValue(OPENED_MAX, 0), "\t", GetValue(OPENED_ABORTED, 0), "\t", prices_chain);
+
+   FileWrite(handler, data_compiled_chain);
   }
 }

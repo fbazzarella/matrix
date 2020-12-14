@@ -24,6 +24,8 @@ public:
    void            OpenPosition(int side, double price_to_open, double distance_to_loss, double distance_to_profit, int address_part0, int address_part1);
    void            OnTick(MqlTick &tick, int address_part2);
    void            CloseAllPositions(MqlTick &tick);
+   void            DumpDataCompiled(int handler);
+   void            DumpDataRaw(int handler);
   };
 
 void PositionBucket::PositionBucket(void)
@@ -59,6 +61,16 @@ void PositionBucket::CloseAllPositions(MqlTick &tick)
    logger.Increment(OPENED_ABORTED, logger.GetValue(OPENED));
 
    for(int i = 0; i < positions_size; i++) positions[i].ForceToClose(tick);
+  }
+
+void PositionBucket::DumpDataCompiled(int handler)
+  {
+   logger.DumpDataCompiled(handler);
+  }
+
+void PositionBucket::DumpDataRaw(int handler)
+  {
+   logger.DumpDataRaw(handler);
   }
 
 bool PositionBucket::CheckProperties(void)

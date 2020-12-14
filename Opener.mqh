@@ -29,7 +29,7 @@ public:
                   ~Opener(void){};
 
    void            OnInit(ENUM_TIMEFRAMES _timeframe, int _begin_time, int _finish_time, int _ma_short, int _ma_long, uint _ma_short_handler, uint _ma_long_handler, double &_loss[], double &_profit[]);
-   void            OnDeinit(void);
+   void            OnDeinit(int handler_data_raw, int handler_data_compiled);
    void            OnTick(MqlTick &_tick);
    void            OnTick(MqlTick &_tick, int address_part0, int address_part1);
    void            OnTimer(int address_part0);
@@ -66,9 +66,15 @@ void Opener::OnInit(ENUM_TIMEFRAMES _timeframe, int _begin_time, int _finish_tim
      }
   }
 
-void Opener::OnDeinit(void)
+void Opener::OnDeinit(int handler_data_raw, int handler_data_compiled)
   {
-   for(int i = 0; i < buckets_size; i++) buckets[i].CloseAllPositions(tick);
+   for(int i = 0; i < buckets_size; i++)
+     {
+      buckets[i].CloseAllPositions(tick);
+
+      if(dump_data_raw)      buckets[i].DumpDataRaw(handler_data_raw);
+      if(dump_data_compiled) buckets[i].DumpDataCompiled(handler_data_compiled);
+     }
   }
 
 void Opener::OnTick(MqlTick &_tick)
