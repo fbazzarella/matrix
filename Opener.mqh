@@ -1,6 +1,4 @@
-﻿#include <MyLibs\Paibot\PositionBucket.mqh>
-
-namespace Paibot
+﻿namespace Paibot
 {
 class Opener
   {

@@ -1,6 +1,3 @@
-#include <MyLibs\Paibot\Logger.mqh>
-#include <MyLibs\Paibot\Position.mqh>
-
 namespace Paibot
 {
 class PositionBucket

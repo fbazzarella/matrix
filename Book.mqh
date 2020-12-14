@@ -1,5 +1,3 @@
-#include <MyLibs\Paibot\OrderBucket.mqh>
-
 namespace Paibot
 {
 class Book
