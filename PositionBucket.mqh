@@ -9,7 +9,7 @@ private:
    int             positions_size;
 
    bool            CheckProperties(void);
-   int             GetNextPlace(void);
+   int             GetPlaceNext(void);
    void            CheckPositionsSize(void);
    void            SetPositionsSize(int size);
    void            AttachLoggerToPositions(int from, int to);
@@ -18,8 +18,7 @@ public:
                   ~PositionBucket(void){};
 
    void            SetProperties(string _id);
-   void            OpenPosition(int side, double price_to_open, double distance_to_loss, double distance_to_profit, int address_part0, int address_part1);
-   void            OnTick(MqlTick &tick, int address_part2);
+   void            OpenPosition(int side, double price_to_open, double distance_to_loss, double distance_to_profit);
    void            CloseAllPositions(MqlTick &tick);
    void            DumpDataCompiled(int handler);
    void            DumpDataRaw(int handler);
@@ -35,18 +34,11 @@ void PositionBucket::SetProperties(string _id)
    logger.SetParentId(id = _id);
   }
 
-void PositionBucket::OpenPosition(int side, double price_to_open, double distance_to_loss, double distance_to_profit, int address_part0, int address_part1)
+void PositionBucket::OpenPosition(int side, double price_to_open, double distance_to_loss, double distance_to_profit)
   {
    if(!CheckProperties() || (side != -1 && side != 1) || price_to_open == 0 || (!async && logger.GetValue(OPENED) == 1)) return;
 
-   int next_place = GetNextPlace();
-
-   positions[next_place].Open(side, price_to_open, distance_to_loss, distance_to_profit, address_part0, address_part1, next_place);
-  }
-
-void PositionBucket::OnTick(MqlTick &tick, int address_part2)
-  {
-   positions[address_part2].OnTick(tick);
+   positions[GetPlaceNext()].Open(side, price_to_open, distance_to_loss, distance_to_profit);
 
    if(print_data_compiled) logger.PrintDataCompiled();
   }
@@ -77,7 +69,7 @@ bool PositionBucket::CheckProperties(void)
    return true;
   }
 
-int PositionBucket::GetNextPlace(void)
+int PositionBucket::GetPlaceNext(void)
   {
    CheckPositionsSize();
 

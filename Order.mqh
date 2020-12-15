@@ -3,36 +3,45 @@ namespace Paibot
 class Order
   {
 private:
-   string          address_position;
-   int             address_counterpart;
+   Position       *position;
+   uchar           state;
+
+   bool            IsClosed(void);
 public:
-                   Order(void){};
+                   Order(void);
                   ~Order(void){};
 
-   void            SetProperties(string _address_position, int _address_counterpart);
-   string          GetAddressPosition(void);
+   void            AttachPosition(Position *_position, int i);
    void            OnTick(MqlTick &tick);
+   void            Close(void);
   };
 
-void Order::SetProperties(string _address_position, int _address_counterpart)
+void Order::Order(void)
   {
-   address_position    = _address_position;
-   address_counterpart = _address_counterpart;
+   state = 1;
   }
 
-string Order::GetAddressPosition(void)
+void Order::AttachPosition(Position *_position, int i)
   {
-   return address_position;
+   position = _position;
+
+   position.AttachOrder(GetPointer(this), i);
   }
 
 void Order::OnTick(MqlTick &tick)
   {
-   string address_parts[];
-   
-   StringSplit(address_position, StringGetCharacter(".", 0), address_parts);
+   if(IsClosed()) return;
 
-   openers[(int)address_parts[0]].OnTick(tick, (int)address_parts[1], (int)address_parts[2]);
-   
-   book.RemoveOrder(address_counterpart, address_position);
+   position.OnTick(tick);
+  }
+
+void Order::Close(void)
+  {
+   state = 0;
+  }
+
+bool Order::IsClosed(void)
+  {
+   return state == 0;
   }
 }

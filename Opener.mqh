@@ -29,8 +29,7 @@ public:
    void            OnInit(ENUM_TIMEFRAMES _timeframe, int _begin_time, int _finish_time, int _ma_short, int _ma_long, uint _ma_short_handler, uint _ma_long_handler, double &_loss[], double &_profit[]);
    void            OnDeinit(int handler_data_raw, int handler_data_compiled);
    void            OnTick(MqlTick &_tick);
-   void            OnTick(MqlTick &_tick, int address_part0, int address_part1);
-   void            OnTimer(int address_part0);
+   void            OnTimer(void);
   };
 
 void Opener::Opener(void)
@@ -81,12 +80,7 @@ void Opener::OnTick(MqlTick &_tick)
    tick_count++;
   }
 
-void Opener::OnTick(MqlTick &_tick, int address_part1, int address_part2)
-  {
-   buckets[address_part1].OnTick(_tick, address_part2);
-  }
-
-void Opener::OnTimer(int address_part0)
+void Opener::OnTimer(void)
   {
    MqlDateTime now;
    TimeTradeServer(now);
@@ -103,7 +97,7 @@ void Opener::OnTimer(int address_part0)
         {
          for(double __profit = profit[0]; __profit <= profit[1]; __profit += profit[2])
            {
-            buckets[i++].OpenPosition(side, price, __loss, __profit, address_part0, i);
+            buckets[i++].OpenPosition(side, price, __loss, __profit);
            }
         }
 

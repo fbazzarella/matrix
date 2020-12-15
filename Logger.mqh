@@ -85,9 +85,9 @@ void Logger::KeepMax(ENUM_LOGGER_KEY key, double value)
 
 void Logger::AddBalance(double balance)
   {
-   StringConcatenate(data_balance_chain, data_balance_chain, (string)balance + "\t");
-
    data_compiled[BALANCE_FINAL] += balance;
+
+   StringConcatenate(data_balance_chain, data_balance_chain, (string)data_compiled[BALANCE_FINAL] + "\t");
   }
 
 void Logger::AddDataRaw(MqlTick &tick, string side, double price_closed, double balance, datetime time_closed, datetime time_opened, double price_opened, double price_for_loss, double price_for_profit)
@@ -123,18 +123,17 @@ void Logger::PrintDataRaw(MqlTick &tick, string side, double price_closed, doubl
 
 void Logger::PrintDataCompiled(void)
   {
-   if(data_compiled[COUNT] > 0)
-     {
-      Print("Position stats for '" + id_parent + "':");
-      Print("| count          " + GetValue(COUNT, 0));
-      Print("| with loss      " + GetValue(WITH_LOSS, 0) + " (" + GetRate(WITH_LOSS, COUNT, 1) + "%)");
-      Print("| with profit    " + GetValue(WITH_PROFIT, 0) + " (" + GetRate(WITH_PROFIT, COUNT, 1) + "%)");
-      Print("| opened         " + GetValue(OPENED, 0));
-      Print("| opened max     " + GetValue(OPENED_MAX, 0));
-      Print("| opened aborted " + GetValue(OPENED_ABORTED, 0));
-      Print("| final balance  " + GetValue(BALANCE_FINAL, 2) + " BRL");
-      Print(""); Print(""); Print(""); Print("");
-     }
+   if(data_compiled[COUNT] == 0) return;
+
+   Print("Position stats for '" + id_parent + "':");
+   Print("| count          " + GetValue(COUNT, 0));
+   Print("| with loss      " + GetValue(WITH_LOSS, 0) + " (" + GetRate(WITH_LOSS, COUNT, 1) + "%)");
+   Print("| with profit    " + GetValue(WITH_PROFIT, 0) + " (" + GetRate(WITH_PROFIT, COUNT, 1) + "%)");
+   Print("| opened         " + GetValue(OPENED, 0));
+   Print("| opened max     " + GetValue(OPENED_MAX, 0));
+   Print("| opened aborted " + GetValue(OPENED_ABORTED, 0));
+   Print("| final balance  " + GetValue(BALANCE_FINAL, 2) + " BRL");
+   Print(""); Print(""); Print(""); Print("");
   }
 
 void Logger::DumpDataRaw(int handler)

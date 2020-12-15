@@ -18,9 +18,8 @@ public:
                   ~Book(void){};
 
    void            SetProperties(double _price_base, double _tick_size);
-   void            PlaceOrders(string address_position, double price_first, double price_second);
+   void            PlaceOrders(double price_first, double price_second, Position *position);
    void            OnTick(MqlTick &tick);
-   void            RemoveOrder(int address_counterpart, string address_position);
    void            Reset(void);
   };
 
@@ -35,15 +34,12 @@ void Book::SetProperties(double _price_base, double _tick_size)
    tick_size  = _tick_size;
   }
 
-void Book::PlaceOrders(string address_position, double price_first, double price_second)
+void Book::PlaceOrders(double price_first, double price_second, Position *position)
   {
    if(!CheckProperties()) return;
 
-   int place_first  = GetPlace(price_first),
-       place_second = GetPlace(price_second);
-
-   buckets[place_first].PlaceOrder(address_position, place_second);
-   buckets[place_second].PlaceOrder(address_position, place_first);
+   buckets[GetPlace(price_first)].PlaceOrder(position, 0);
+   buckets[GetPlace(price_second)].PlaceOrder(position, 1);
   }
 
 void Book::OnTick(MqlTick &tick)
@@ -56,13 +52,6 @@ void Book::OnTick(MqlTick &tick)
    for(double p = lower; p <= higher; p += tick_size) if(p != price_last_prev) buckets[GetPlace(p)].OnTick(tick);
 
    price_last_prev = tick.last;
-  }
-
-void Book::RemoveOrder(int address_counterpart, string address_position)
-  {
-   if(!CheckProperties()) return;
-
-   buckets[address_counterpart].RemoveOrder(address_position);
   }
 
 void Book::Reset(void)
