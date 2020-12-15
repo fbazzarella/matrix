@@ -6,9 +6,7 @@ private:
    Logger         *logger;
    void           *orders[2];
    uchar           state;
-   double          symbol_factor,
-                   symbol_step,
-                   symbol_cost;
+   Properties      symbol;
    datetime        time_opened,
                    time_closed;
    double          price_opened,
@@ -28,7 +26,7 @@ public:
    bool            IsOpened(void);
    bool            IsClosed(void);
                    template<typename Book>
-   void            Open(Book &book, int side, double price_to_open, double distance_to_loss, double distance_to_profit);
+   void            Open(Properties &symbol_properties, Book &book, int side, double price_to_open, double distance_to_loss, double distance_to_profit);
    void            OnTick(MqlTick &tick);
    void            ForceToClose(MqlTick &tick);
   };
@@ -36,10 +34,6 @@ public:
 void Position::Position(void)
   {
    state = 0;
-
-   symbol_factor = 10;
-   symbol_step   = 0.5;
-   symbol_cost   = 2.4;
   }
 
 void Position::AttachLogger(Logger *_logger)
@@ -64,12 +58,12 @@ bool Position::IsClosed(void)
   }
 
      template<typename Book>
-void Position::Open(Book &book, int side, double price_to_open, double distance_to_loss, double distance_to_profit)
+void Position::Open(Properties &symbol_properties, Book &book, int side, double price_to_open, double distance_to_loss, double distance_to_profit)
   {
    if(IsOpened()) return;
 
-   state = 1;
-
+   state            = 1;
+   symbol           = symbol_properties;
    time_opened      = TimeTradeServer();
    price_opened     = price_to_open;
    price_for_loss   = price_to_open - (side * distance_to_loss);
@@ -79,7 +73,7 @@ void Position::Open(Book &book, int side, double price_to_open, double distance_
    logger.Increment(OPENED, 1);
    logger.KeepMax(OPENED_MAX, logger.GetValue(OPENED));
 
-   book.PlaceOrders(price_for_loss, price_for_profit + (side * symbol_step), GetPointer(this));
+   book.PlaceOrders(price_for_loss, price_for_profit + (side * symbol.tick_size), GetPointer(this));
   }
 
 void Position::OnTick(MqlTick &tick)
@@ -109,8 +103,8 @@ void Position::TryToClose(MqlTick &tick, bool forced = false)
      {
       side = "Sell";
 
-           if(price_last >= price_for_loss || forced)       price_closed = tick.ask;
-      else if(price_last <= price_for_profit - symbol_step) price_closed = price_for_profit;
+           if(price_last >= price_for_loss || forced)            price_closed = tick.ask;
+      else if(price_last <= price_for_profit - symbol.tick_size) price_closed = price_for_profit;
 
       balance = price_opened - price_closed;
      }
@@ -119,8 +113,8 @@ void Position::TryToClose(MqlTick &tick, bool forced = false)
      {
       side = "Buy";
 
-           if(price_last <= price_for_loss || forced)       price_closed = tick.bid;
-      else if(price_last >= price_for_profit + symbol_step) price_closed = price_for_profit;
+           if(price_last <= price_for_loss || forced)            price_closed = tick.bid;
+      else if(price_last >= price_for_profit + symbol.tick_size) price_closed = price_for_profit;
 
       balance = price_closed - price_opened;
      }
@@ -134,11 +128,10 @@ void Position::Close(MqlTick &tick, string side, double price_closed, double bal
 
    CloseOrders();
 
-   state = 0;
-
+   state        = 0;
    time_closed  = TimeTradeServer();
-   balance     *= symbol_factor;
-   balance     -= symbol_cost;
+   balance     *= symbol.multiplier;
+   balance     -= symbol.trade_cost;
 
    logger.Increment(OPENED, -1);
    logger.Increment(balance < 0 ? WITH_LOSS : WITH_PROFIT, 1);

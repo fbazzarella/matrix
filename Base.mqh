@@ -1,4 +1,5 @@
 #include <MyLibs\Paibot\TimeHelper.mqh>
+#include <MyLibs\Paibot\Symbol.mqh>
 #include <MyLibs\Paibot\Logger.mqh>
 #include <MyLibs\Paibot\Position.mqh>
 #include <MyLibs\Paibot\PositionBucket.mqh>
@@ -14,44 +15,52 @@ class Base
 private:
    static ENUM_TIMEFRAMES timeframes[];
    static int      ma_short[],
-                   ma_long[],
-                   begin_time[],
+                   ma_long[];
+   int             begin_time[],
                    finish_time[];
-   static double   loss[],
+   double          loss[],
                    profit[];
 
+   Symbol          symbol;
+   Properties      symbol_properties;
    Book            book;
    Opener          openers[];
    int             openers_size;
 
+   bool            CheckSymbolProperties(void);
    int             GetFileHandler(string path, string filename);
 public:
                    Base(void);
                   ~Base(void){};
 
-   void            OnInit(void);
+   bool            OnInit(void);
    void            OnDeinit(void);
    void            OnTick(void);
    void            OnTimer(void);
   };
 
-ENUM_TIMEFRAMES Base::timeframes[]  = { PERIOD_M1, PERIOD_M2, PERIOD_M3, PERIOD_M4, PERIOD_M5, PERIOD_M6,
-                                        PERIOD_M10, PERIOD_M12, PERIOD_M15, PERIOD_M20, PERIOD_M30 };
-int             Base::ma_short[]    = {  7,  7, 7 },
-                Base::ma_long[]     = { 21, 21, 7 },
-                Base::begin_time[]  = {  9, 10, 1 },
-                Base::finish_time[] = { 10, 16, 1 };
-double          Base::loss[]        = {  5, 95, 5 },
-                Base::profit[]      = {  5, 95, 5 };
+ENUM_TIMEFRAMES Base::timeframes[] = { PERIOD_M1, PERIOD_M2, PERIOD_M3, PERIOD_M4, PERIOD_M5, PERIOD_M6,
+                                       PERIOD_M10, PERIOD_M12, PERIOD_M15, PERIOD_M20, PERIOD_M30 };
+int             Base::ma_short[]   = {  7,  7, 7 },
+                Base::ma_long[]    = { 21, 21, 7 };
 
 void Base::Base(void)
   {
    openers_size = 0;
   }
 
-void Base::OnInit(void)
+bool Base::OnInit(void)
   {
-   book.SetProperties(iClose(_Symbol, 0, 0), SymbolInfoDouble(_Symbol, SYMBOL_TRADE_TICK_SIZE));
+   symbol_properties = symbol.GetProperties(_Symbol);
+
+   if(!CheckSymbolProperties()) return false;
+
+   ArrayCopy(begin_time,  symbol_properties.begin_time);
+   ArrayCopy(finish_time, symbol_properties.finish_time);
+   ArrayCopy(loss,        symbol_properties.loss);
+   ArrayCopy(profit,      symbol_properties.profit);
+
+   book.SetProperties(symbol_properties.close, symbol_properties.tick_size);
 
    for(int i = 0; i < ArraySize(timeframes); i++)
      {
@@ -78,6 +87,8 @@ void Base::OnInit(void)
            }
         }
      }
+
+   return true;
   }
 
 void Base::OnDeinit(void)
@@ -108,10 +119,20 @@ void Base::OnTimer(void)
 
    if(now.sec == 0)
      {
-      for(int i = 0; i < openers_size; i++) openers[i].OnTimer(book);
+      for(int i = 0; i < openers_size; i++) openers[i].OnTimer(symbol_properties, book);
 
-      if(GetSessionPeriod() == 3) book.Reset();
+      int bound_begin  = symbol_properties.bound_begin,
+          bound_finish = symbol_properties.bound_finish;
+
+      if(GetSessionPeriod(bound_begin, bound_finish, bound_begin, bound_finish) == 3) book.Reset();
      }
+  }
+
+bool Base::CheckSymbolProperties(void)
+  {
+   if(symbol_properties.close == 0){ Print("ERROR: Please check the Symbol used."); return false; };
+
+   return true;
   }
 
 int Base::GetFileHandler(string path, string filename)

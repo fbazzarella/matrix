@@ -15,7 +15,6 @@ private:
    MqlTick         tick;
    PositionBucket  buckets[];
    int             buckets_size,
-                   session_period,
                    tick_count;
 
    string          GetFileName(void);
@@ -30,14 +29,13 @@ public:
    void            OnDeinit(int handler_data_raw, int handler_data_compiled);
    void            OnTick(MqlTick &_tick);
                    template<typename Book>
-   void            OnTimer(Book &book);
+   void            OnTimer(Properties &symbol_properties, Book &book);
   };
 
 void Opener::Opener(void)
   {
-   buckets_size   = 0;
-   session_period = 0;
-   tick_count     = 0;
+   buckets_size = 0;
+   tick_count   = 0;
   }
 
 void Opener::OnInit(ENUM_TIMEFRAMES _timeframe, int _begin_time, int _finish_time, int _ma_short, int _ma_long, uint _ma_short_handler, uint _ma_long_handler, double &_loss[], double &_profit[])
@@ -82,12 +80,12 @@ void Opener::OnTick(MqlTick &_tick)
   }
 
      template<typename Book>
-void Opener::OnTimer(Book &book)
+void Opener::OnTimer(Properties &symbol_properties, Book &book)
   {
    MqlDateTime now;
    TimeTradeServer(now);
 
-   session_period = GetSessionPeriod(begin_time, finish_time);
+   int session_period = GetSessionPeriod(symbol_properties.bound_begin, symbol_properties.bound_finish, begin_time, finish_time);
 
    if(now.min % (int)timeframe == 0 && session_period == 1 && tick_count > 0)
      {
@@ -99,7 +97,7 @@ void Opener::OnTimer(Book &book)
         {
          for(double __profit = profit[0]; __profit <= profit[1]; __profit += profit[2])
            {
-            buckets[i++].OpenPosition(book, side, price, __loss, __profit);
+            buckets[i++].OpenPosition(symbol_properties, book, side, price, __loss, __profit);
            }
         }
 
@@ -112,12 +110,13 @@ void Opener::OnTimer(Book &book)
 string Opener::GetOpenerId(double _loss, double _profit)
   {
    string opener_id,
-          format = "%04.1f";
+          iformat = "%02i",
+          dformat = "%07.2f";
 
-   StringConcatenate(opener_id, StringFormat(format, timeframe), "_",
-      StringFormat(format, begin_time), "_",StringFormat(format, finish_time), "_",
-      StringFormat(format, ma_short), "_", StringFormat(format, ma_long), "_",
-      StringFormat(format, _loss), "_", StringFormat(format, _profit));
+   StringConcatenate(opener_id, StringFormat(iformat, timeframe), "_",
+      StringFormat(iformat, begin_time), "_",StringFormat(iformat, finish_time), "_",
+      StringFormat(iformat, ma_short), "_", StringFormat(iformat, ma_long), "_",
+      StringFormat(dformat, _loss), "_", StringFormat(dformat, _profit));
 
    return opener_id;
   }
