@@ -1,0 +1,121 @@
+#include <MyLibs\Paibot\TimeHelper.mqh>
+#include <MyLibs\Paibot\Logger.mqh>
+#include <MyLibs\Paibot\Position.mqh>
+#include <MyLibs\Paibot\PositionBucket.mqh>
+#include <MyLibs\Paibot\Opener.mqh>
+#include <MyLibs\Paibot\Order.mqh>
+#include <MyLibs\Paibot\OrderBucket.mqh>
+#include <MyLibs\Paibot\Book.mqh>
+
+namespace Paibot
+{
+class Base
+  {
+private:
+   static ENUM_TIMEFRAMES timeframes[];
+   static int      ma_short[],
+                   ma_long[],
+                   begin_time[],
+                   finish_time[];
+   static double   loss[],
+                   profit[];
+
+   Book            book;
+   Opener          openers[];
+   int             openers_size;
+
+   int             GetFileHandler(string path, string filename);
+public:
+                   Base(void);
+                  ~Base(void){};
+
+   void            OnInit(void);
+   void            OnDeinit(void);
+   void            OnTick(void);
+   void            OnTimer(void);
+  };
+
+ENUM_TIMEFRAMES Base::timeframes[]  = { PERIOD_M1, PERIOD_M2, PERIOD_M3, PERIOD_M4, PERIOD_M5, PERIOD_M6,
+                                        PERIOD_M10, PERIOD_M12, PERIOD_M15, PERIOD_M20, PERIOD_M30 };
+int             Base::ma_short[]    = {  7,  7, 7 },
+                Base::ma_long[]     = { 21, 21, 7 },
+                Base::begin_time[]  = {  9, 10, 1 },
+                Base::finish_time[] = { 10, 16, 1 };
+double          Base::loss[]        = {  5, 95, 5 },
+                Base::profit[]      = {  5, 95, 5 };
+
+void Base::Base(void)
+  {
+   openers_size = 0;
+  }
+
+void Base::OnInit(void)
+  {
+   book.SetProperties(iClose(_Symbol, 0, 0), SymbolInfoDouble(_Symbol, SYMBOL_TRADE_TICK_SIZE));
+
+   for(int i = 0; i < ArraySize(timeframes); i++)
+     {
+      for(int _ma_short = ma_short[0]; _ma_short <= ma_short[1]; _ma_short += ma_short[2])
+        {
+         for(int _ma_long = ma_long[0]; _ma_long <= ma_long[1]; _ma_long += ma_long[2])
+           {
+            if(_ma_short >= _ma_long) continue;
+
+            uint ma_short_handler = iMA(_Symbol, timeframes[i], _ma_short, 0, MODE_EMA, PRICE_CLOSE),
+                 ma_long_handler  = iMA(_Symbol, timeframes[i], _ma_long,  0, MODE_EMA, PRICE_CLOSE);
+
+            for(int _begin_time = begin_time[0]; _begin_time <= begin_time[1]; _begin_time += begin_time[2])
+              {
+               for(int _finish_time = finish_time[0]; _finish_time <= finish_time[1]; _finish_time += finish_time[2])
+                 {
+                  if(_begin_time > _finish_time) continue;
+
+                  ArrayResize(openers, ++openers_size);
+
+                  openers[openers_size - 1].OnInit(timeframes[i], _begin_time, _finish_time, _ma_short, _ma_long, ma_short_handler, ma_long_handler, loss, profit);
+                 }
+              }
+           }
+        }
+     }
+  }
+
+void Base::OnDeinit(void)
+  {
+   int handler_data_raw      = GetFileHandler("/", "data_raw"),
+       handler_data_compiled = GetFileHandler("/", "data_compiled");
+
+   for(int i = 0; i < openers_size; i++) openers[i].OnDeinit(handler_data_raw, handler_data_compiled);
+
+   FileClose(handler_data_raw);
+   FileClose(handler_data_compiled);
+  }
+
+void Base::OnTick(void)
+  {
+   MqlTick tick;
+   SymbolInfoTick(_Symbol, tick);
+
+   book.OnTick(tick);
+
+   for(int i = 0; i < openers_size; i++) openers[i].OnTick(tick);
+  }
+
+void Base::OnTimer(void)
+  {
+   MqlDateTime now;
+   TimeTradeServer(now);
+
+   if(now.sec == 0)
+     {
+      for(int i = 0; i < openers_size; i++) openers[i].OnTimer(book);
+
+      if(GetSessionPeriod() == 3) book.Reset();
+     }
+  }
+
+int Base::GetFileHandler(string path, string filename)
+  {
+   return FileOpen(path + filename + ".csv", FILE_READ|FILE_WRITE|FILE_CSV|FILE_COMMON, "\t");
+  }
+}

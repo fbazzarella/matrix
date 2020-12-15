@@ -29,7 +29,8 @@ public:
    void            OnInit(ENUM_TIMEFRAMES _timeframe, int _begin_time, int _finish_time, int _ma_short, int _ma_long, uint _ma_short_handler, uint _ma_long_handler, double &_loss[], double &_profit[]);
    void            OnDeinit(int handler_data_raw, int handler_data_compiled);
    void            OnTick(MqlTick &_tick);
-   void            OnTimer(void);
+                   template<typename Book>
+   void            OnTimer(Book &book);
   };
 
 void Opener::Opener(void)
@@ -80,7 +81,8 @@ void Opener::OnTick(MqlTick &_tick)
    tick_count++;
   }
 
-void Opener::OnTimer(void)
+     template<typename Book>
+void Opener::OnTimer(Book &book)
   {
    MqlDateTime now;
    TimeTradeServer(now);
@@ -97,7 +99,7 @@ void Opener::OnTimer(void)
         {
          for(double __profit = profit[0]; __profit <= profit[1]; __profit += profit[2])
            {
-            buckets[i++].OpenPosition(side, price, __loss, __profit);
+            buckets[i++].OpenPosition(book, side, price, __loss, __profit);
            }
         }
 

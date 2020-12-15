@@ -27,7 +27,8 @@ public:
    void            AttachOrder(Order *order, int i);
    bool            IsOpened(void);
    bool            IsClosed(void);
-   void            Open(int side, double price_to_open, double distance_to_loss, double distance_to_profit);
+                   template<typename Book>
+   void            Open(Book &book, int side, double price_to_open, double distance_to_loss, double distance_to_profit);
    void            OnTick(MqlTick &tick);
    void            ForceToClose(MqlTick &tick);
   };
@@ -62,7 +63,8 @@ bool Position::IsClosed(void)
    return state == 0;
   }
 
-void Position::Open(int side, double price_to_open, double distance_to_loss, double distance_to_profit)
+     template<typename Book>
+void Position::Open(Book &book, int side, double price_to_open, double distance_to_loss, double distance_to_profit)
   {
    if(IsOpened()) return;
 
