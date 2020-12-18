@@ -93,8 +93,9 @@ bool Base::OnInit(void)
 
 void Base::OnDeinit(void)
   {
-   int handler_data_raw      = GetFileHandler("/", "data_raw"),
-       handler_data_compiled = GetFileHandler("/", "data_compiled");
+   string filename              = T2S(time_initialization) + "-" + T2S(TimeTradeServer());
+   int    handler_data_raw      = GetFileHandler("raw/", filename),
+          handler_data_compiled = GetFileHandler("compiled/", filename);
 
    for(int i = 0; i < openers_size; i++) openers[i].OnDeinit(handler_data_raw, handler_data_compiled);
 
@@ -137,6 +138,8 @@ bool Base::CheckSymbolProperties(void)
 
 int Base::GetFileHandler(string path, string filename)
   {
-   return FileOpen(path + filename + ".csv", FILE_READ|FILE_WRITE|FILE_CSV|FILE_COMMON, "\t");
+   string filepath = (MQLInfoInteger(MQL_TESTER) ? "tester" : "simulator") + "/" + symbol_properties.label + "/" + path;
+
+   return FileOpen(filepath + filename + ".csv", FILE_READ|FILE_WRITE|FILE_CSV|FILE_COMMON, "\t");
   }
 }

@@ -1,3 +1,5 @@
+datetime time_initialization = TimeTradeServer();
+
 int GetSessionPeriod(int ilower, int ihigher, int _begin, int _finish)
   {
    string   slower   = (string)ilower,
@@ -27,4 +29,15 @@ datetime S2T(string hm)
    StringConcatenate(time, now.year, ".", now.mon, ".", now.day, " ", hm, ":00");
 
    return StringToTime(time);
+  }
+
+string T2S(datetime _time)
+  {
+   string time = TimeToString(_time, TIME_DATE|TIME_SECONDS);
+
+   StringReplace(time, " ", "");
+   StringReplace(time, ".", "");
+   StringReplace(time, ":", "");
+
+   return time;
   }
