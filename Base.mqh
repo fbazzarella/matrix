@@ -25,7 +25,8 @@ private:
    Properties      symbol_properties;
    Book            book;
    Opener          openers[];
-   int             openers_size;
+   int             openers_size,
+                   handler_data_raw;
 
    bool            CheckSymbolProperties(void);
    int             GetFileHandler(string path, string filename);
@@ -62,6 +63,8 @@ bool Base::OnInit(void)
 
    book.SetProperties(symbol_properties.close, symbol_properties.tick_size);
 
+   handler_data_raw = GetFileHandler("raw/", T2S(time_initialization));
+
    for(int i = 0; i < ArraySize(timeframes); i++)
      {
       for(int _ma_short = ma_short[0]; _ma_short <= ma_short[1]; _ma_short += ma_short[2])
@@ -81,7 +84,7 @@ bool Base::OnInit(void)
 
                   ArrayResize(openers, ++openers_size);
 
-                  openers[openers_size - 1].OnInit(timeframes[i], _begin_time, _finish_time, _ma_short, _ma_long, ma_short_handler, ma_long_handler, loss, profit);
+                  openers[openers_size - 1].OnInit(handler_data_raw, timeframes[i], _begin_time, _finish_time, _ma_short, _ma_long, ma_short_handler, ma_long_handler, loss, profit);
                  }
               }
            }
@@ -93,13 +96,12 @@ bool Base::OnInit(void)
 
 void Base::OnDeinit(void)
   {
-   string filename              = T2S(time_initialization) + "-" + T2S(TimeTradeServer());
-   int    handler_data_raw      = GetFileHandler("raw/", filename),
-          handler_data_compiled = GetFileHandler("compiled/", filename);
-
-   for(int i = 0; i < openers_size; i++) openers[i].OnDeinit(handler_data_raw, handler_data_compiled);
-
    FileClose(handler_data_raw);
+
+   int handler_data_compiled = GetFileHandler("compiled/", T2S(time_initialization));
+
+   for(int i = 0; i < openers_size; i++) openers[i].OnDeinit(handler_data_compiled);
+
    FileClose(handler_data_compiled);
   }
 

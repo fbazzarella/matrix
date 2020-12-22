@@ -18,7 +18,7 @@ public:
                   ~Book(void){};
 
    void            SetProperties(double _price_base, double _tick_size);
-   void            PlaceOrders(double price_first, double price_second, Position *position);
+   void            PlaceOrders(double price0, double price1, Position *position);
    void            OnTick(MqlTick &tick);
    void            Reset(void);
   };
@@ -30,16 +30,17 @@ void Book::Book(void)
 
 void Book::SetProperties(double _price_base, double _tick_size)
   {
-   price_base = price_last_prev = _price_base;
-   tick_size  = _tick_size;
+   price_base      = _price_base;
+   price_last_prev = _price_base;
+   tick_size       = _tick_size;
   }
 
-void Book::PlaceOrders(double price_first, double price_second, Position *position)
+void Book::PlaceOrders(double price0, double price1, Position *position)
   {
    if(!CheckProperties()) return;
 
-   buckets[GetPlace(price_first)].PlaceOrder(position, 0);
-   buckets[GetPlace(price_second)].PlaceOrder(position, 1);
+   buckets[GetPlace(price0)].PlaceOrder(position, 0);
+   buckets[GetPlace(price1)].PlaceOrder(position, 1);
   }
 
 void Book::OnTick(MqlTick &tick)

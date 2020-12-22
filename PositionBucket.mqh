@@ -17,12 +17,11 @@ public:
                    PositionBucket(void);
                   ~PositionBucket(void){};
 
-   void            SetProperties(string _id);
+   void            SetProperties(string _id, int handler_data_raw);
                    template<typename Book>
    void            OpenPosition(Properties &symbol_properties, Book &book, int side, double price_to_open, double distance_to_loss, double distance_to_profit);
    void            CloseAllPositions(MqlTick &tick);
    void            DumpDataCompiled(int handler);
-   void            DumpDataRaw(int handler);
   };
 
 void PositionBucket::PositionBucket(void)
@@ -30,9 +29,9 @@ void PositionBucket::PositionBucket(void)
    SetPositionsSize(1);
   }
 
-void PositionBucket::SetProperties(string _id)
+void PositionBucket::SetProperties(string _id, int handler_data_raw)
   {
-   logger.SetIdParent(id = _id);
+   logger.SetProperties(id = _id, handler_data_raw);
   }
 
      template<typename Book>
@@ -57,11 +56,6 @@ void PositionBucket::CloseAllPositions(MqlTick &tick)
 void PositionBucket::DumpDataCompiled(int handler)
   {
    logger.DumpDataCompiled(handler);
-  }
-
-void PositionBucket::DumpDataRaw(int handler)
-  {
-   logger.DumpDataRaw(handler);
   }
 
 bool PositionBucket::CheckProperties(void)

@@ -129,14 +129,13 @@ void Position::Close(MqlTick &tick, int counterpart, string side, double price_c
    state        = 0;
    time_closed  = TimeTradeServer();
    balance     *= symbol.multiplier;
-   balance     -= symbol.trade_cost;
 
    logger.Increment(OPENED, -1);
    logger.Increment(balance < 0 ? WITH_LOSS : WITH_PROFIT, 1);
    logger.AddBalance(balance);
    
    if(print_data_raw) logger.PrintDataRaw(tick, side, price_closed, balance, time_closed, time_opened, price_opened, price_for_loss, price_for_profit);
-   if(dump_data_raw)  logger.AddDataRaw(tick, side, price_closed, balance, time_closed, time_opened, price_opened, price_for_loss, price_for_profit);
+   if(dump_data_raw)  logger.DumpDataRaw(tick, side, price_closed, balance, time_closed, time_opened, price_opened, price_for_loss, price_for_profit);
   }
 
 void Position::CloseOrder(int _counterpart)

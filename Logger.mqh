@@ -16,15 +16,14 @@ class Logger
 private:
    string          id_parent,
                    id_tabulated;
+   int             handler_data_raw;
    double          data_compiled[7];
-   string          data_balance_chain,
-                   data_raw[];
-   int             data_raw_size;
+   string          data_balance_chain;
 public:
                    Logger(void);
                   ~Logger(void){};
 
-   void            SetIdParent(string _id_parent);
+   void            SetProperties(string _id_parent, int _handler_data_raw);
    double          GetValue(ENUM_LOGGER_KEY key);
    string          GetValue(ENUM_LOGGER_KEY key, int precision);
    double          GetRate(ENUM_LOGGER_KEY key_numerator, ENUM_LOGGER_KEY key_denominator);
@@ -32,10 +31,9 @@ public:
    void            Increment(ENUM_LOGGER_KEY key, double value);
    void            KeepMax(ENUM_LOGGER_KEY key, double value);
    void            AddBalance(double balance);
-   void            AddDataRaw(MqlTick &tick, string side, double price_closed, double balance, datetime time_closed, datetime time_opened, double price_opened, double price_for_loss, double price_for_profit);
    void            PrintDataRaw(MqlTick &tick, string side, double price_closed, double balance, datetime time_closed, datetime time_opened, double price_opened, double price_for_loss, double price_for_profit);
    void            PrintDataCompiled(void);
-   void            DumpDataRaw(int handler);
+   void            DumpDataRaw(MqlTick &tick, string side, double price_closed, double balance, datetime time_closed, datetime time_opened, double price_opened, double price_for_loss, double price_for_profit);
    void            DumpDataCompiled(int handler);
   };
 
@@ -44,12 +42,13 @@ void Logger::Logger(void)
    for(int i = 0; i < ArraySize(data_compiled); i++) data_compiled[i] = 0;
 
    data_balance_chain = "0\t";
-   data_raw_size      = 0;
   }
 
-void Logger::SetIdParent(string _id_parent)
+void Logger::SetProperties(string _id_parent, int _handler_data_raw)
   {
-   id_parent = id_tabulated = _id_parent;
+   id_parent        = _id_parent;
+   id_tabulated     = _id_parent;
+   handler_data_raw = _handler_data_raw;
 
    StringReplace(id_tabulated, "_", "_\t");
   }
@@ -93,25 +92,6 @@ void Logger::AddBalance(double balance)
    StringConcatenate(data_balance_chain, data_balance_chain, (string)data_compiled[BALANCE_FINAL] + "\t");
   }
 
-void Logger::AddDataRaw(MqlTick &tick, string side, double price_closed, double balance, datetime time_closed, datetime time_opened, double price_opened, double price_for_loss, double price_for_profit)
-  {
-   uint   time_diff = (uint)(time_closed - time_opened);
-   string prices_chain,
-          data_raw_chain;
-
-   StringConcatenate(prices_chain, price_for_loss, "\t", price_opened, "\t", price_for_profit, "\t", price_closed, "\t",
-      tick.bid, "\t", tick.last, "\t", tick.ask, "\t", balance, "\t", data_compiled[BALANCE_FINAL]);
-
-   StringReplace(prices_chain, ".", ",");
-
-   StringConcatenate(data_raw_chain, "!", "\t", id_parent, "\t", time_opened, "\t",
-      time_closed, "\t", time_diff, "\t", side, "\t", prices_chain);
-
-   ArrayResize(data_raw, ++data_raw_size);
-   
-   data_raw[data_raw_size - 1] = data_raw_chain;
-  }
-
 void Logger::PrintDataRaw(MqlTick &tick, string side, double price_closed, double balance, datetime time_closed, datetime time_opened, double price_opened, double price_for_loss, double price_for_profit)
   {
    Print(id_parent + ": " + side +
@@ -139,9 +119,21 @@ void Logger::PrintDataCompiled(void)
    Print(""); Print(""); Print(""); Print("");
   }
 
-void Logger::DumpDataRaw(int handler)
+void Logger::DumpDataRaw(MqlTick &tick, string side, double price_closed, double balance, datetime time_closed, datetime time_opened, double price_opened, double price_for_loss, double price_for_profit)
   {
-   for(int i = 0; i < data_raw_size; i++) FileWrite(handler, data_raw[i]);
+   uint   time_diff = (uint)(time_closed - time_opened);
+   string prices_chain,
+          data_raw_chain;
+
+   StringConcatenate(prices_chain, price_for_loss, "\t", price_opened, "\t", price_for_profit, "\t", price_closed, "\t",
+      tick.bid, "\t", tick.last, "\t", tick.ask, "\t", balance, "\t", data_compiled[BALANCE_FINAL]);
+
+   StringReplace(prices_chain, ".", ",");
+
+   StringConcatenate(data_raw_chain, "!", "\t", id_parent, "\t", time_opened, "\t",
+      time_closed, "\t", time_diff, "\t", side, "\t", prices_chain);
+
+   FileWrite(handler_data_raw, data_raw_chain);
   }
 
 void Logger::DumpDataCompiled(int handler)

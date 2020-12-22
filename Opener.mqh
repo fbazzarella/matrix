@@ -25,8 +25,8 @@ public:
                    Opener(void);
                   ~Opener(void){};
 
-   void            OnInit(ENUM_TIMEFRAMES _timeframe, int _begin_time, int _finish_time, int _ma_short, int _ma_long, uint _ma_short_handler, uint _ma_long_handler, double &_loss[], double &_profit[]);
-   void            OnDeinit(int handler_data_raw, int handler_data_compiled);
+   void            OnInit(int handler_data_raw, ENUM_TIMEFRAMES _timeframe, int _begin_time, int _finish_time, int _ma_short, int _ma_long, uint _ma_short_handler, uint _ma_long_handler, double &_loss[], double &_profit[]);
+   void            OnDeinit(int handler_data_compiled);
    void            OnTick(MqlTick &_tick);
                    template<typename Book>
    void            OnTimer(Properties &symbol_properties, Book &book);
@@ -38,7 +38,7 @@ void Opener::Opener(void)
    tick_count   = 0;
   }
 
-void Opener::OnInit(ENUM_TIMEFRAMES _timeframe, int _begin_time, int _finish_time, int _ma_short, int _ma_long, uint _ma_short_handler, uint _ma_long_handler, double &_loss[], double &_profit[])
+void Opener::OnInit(int handler_data_raw, ENUM_TIMEFRAMES _timeframe, int _begin_time, int _finish_time, int _ma_short, int _ma_long, uint _ma_short_handler, uint _ma_long_handler, double &_loss[], double &_profit[])
   {
    timeframe        = _timeframe;
    begin_time       = _begin_time;
@@ -57,18 +57,17 @@ void Opener::OnInit(ENUM_TIMEFRAMES _timeframe, int _begin_time, int _finish_tim
         {
          ArrayResize(buckets, ++buckets_size);
 
-         buckets[buckets_size - 1].SetProperties(GetOpenerId(__loss, __profit));
+         buckets[buckets_size - 1].SetProperties(GetOpenerId(__loss, __profit), handler_data_raw);
         }
      }
   }
 
-void Opener::OnDeinit(int handler_data_raw, int handler_data_compiled)
+void Opener::OnDeinit(int handler_data_compiled)
   {
    for(int i = 0; i < buckets_size; i++)
      {
       buckets[i].CloseAllPositions(tick);
 
-      if(dump_data_raw)      buckets[i].DumpDataRaw(handler_data_raw);
       if(dump_data_compiled) buckets[i].DumpDataCompiled(handler_data_compiled);
      }
   }
