@@ -13,9 +13,9 @@ private:
                    price_for_loss,
                    price_for_profit;
 
-   void            TryToClose(MqlTick &tick, bool forced);
-   void            Close(MqlTick &tick, string side, double price_closed, double balance);
-   void            CloseOrders(void);
+   bool            TryToClose(MqlTick &tick, int counterpart, bool forced);
+   void            Close(MqlTick &tick, int counterpart, string side, double price_closed, double balance);
+   void            CloseOrder(int _counterpart);
 public:
                    Position(void);
                   ~Position(void){};
@@ -27,7 +27,7 @@ public:
    bool            IsClosed(void);
                    template<typename Book>
    void            Open(Properties &symbol_properties, Book &book, int side, double price_to_open, double distance_to_loss, double distance_to_profit);
-   void            OnTick(MqlTick &tick);
+   bool            OnTick(MqlTick &tick, int counterpart);
    void            ForceToClose(MqlTick &tick);
   };
 
@@ -76,24 +76,22 @@ void Position::Open(Properties &symbol_properties, Book &book, int side, double 
    book.PlaceOrders(price_for_loss, price_for_profit + (side * symbol.tick_size), GetPointer(this));
   }
 
-void Position::OnTick(MqlTick &tick)
+bool Position::OnTick(MqlTick &tick, int counterpart)
   {
-   if(IsClosed()) return;
+   if(IsClosed()) return true;
 
-   TryToClose(tick);
+   return TryToClose(tick, counterpart, false);
   }
 
 void Position::ForceToClose(MqlTick &tick)
   {
    if(IsClosed()) return;
 
-   TryToClose(tick, true);
+   TryToClose(tick, -1, true);
   }
 
-void Position::TryToClose(MqlTick &tick, bool forced = false)
+bool Position::TryToClose(MqlTick &tick, int counterpart, bool forced)
   {
-   if(IsClosed()) return;
-
    string side;
    double price_last   = tick.last,
           price_closed = 0,
@@ -119,14 +117,14 @@ void Position::TryToClose(MqlTick &tick, bool forced = false)
       balance = price_closed - price_opened;
      }
 
-   if(price_closed > 0) Close(tick, side, price_closed, balance);
+   if(price_closed > 0){ Close(tick, counterpart, side, price_closed, balance); return true; };
+
+   return false;
   }
 
-void Position::Close(MqlTick &tick, string side, double price_closed, double balance)
+void Position::Close(MqlTick &tick, int counterpart, string side, double price_closed, double balance)
   {
-   if(IsClosed()) return;
-
-   CloseOrders();
+   CloseOrder(counterpart);
 
    state        = 0;
    time_closed  = TimeTradeServer();
@@ -141,12 +139,13 @@ void Position::Close(MqlTick &tick, string side, double price_closed, double bal
    if(dump_data_raw)  logger.AddDataRaw(tick, side, price_closed, balance, time_closed, time_opened, price_opened, price_for_loss, price_for_profit);
   }
 
-void Position::CloseOrders(void)
+void Position::CloseOrder(int _counterpart)
   {
-   for(int i = 0; i < ArraySize(orders); i++)
+   if(_counterpart != -1)
      {
-      Order *order = orders[i];
-      order.Close();
+      Order *counterpart = orders[_counterpart];
+
+      counterpart.Close();
      }
   }
 }

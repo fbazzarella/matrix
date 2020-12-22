@@ -27,13 +27,6 @@ void OrderBucket::PlaceOrder(Position *position, int i)
 
 void OrderBucket::OnTick(MqlTick &tick)
   {
-   while(orders_size > 0)
-     {
-      orders[0].OnTick(tick);
-
-      ArrayRemove(orders, 0, 1);
-
-      orders_size--;
-     }
+   for(int i = orders_size - 1; i >= 0; i--) if(orders[i].OnTick(tick)){ ArrayRemove(orders, i, 1); orders_size--; };
   }
 }
