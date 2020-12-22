@@ -17,14 +17,13 @@ namespace Paibot
 class Symbol
   {
 private:
+   static string   equities[];
+
    Properties      none;
 
-   Properties      GetWIN(string symbol);
-   Properties      GetWDO(string symbol);
-   Properties      GetIND(string symbol);
-   Properties      GetDOL(string symbol);
-   Properties      IBOV(string symbol);
-   Properties      USD(string symbol);
+   Properties      GetEquity(string symbol);
+   Properties      GetIBOV(string symbol, string label, double multiplier);
+   Properties      GetUSD(string symbol, string label, double multiplier);
    Properties      Future(string symbol);
    Properties      Base(string symbol);
 public:
@@ -34,82 +33,73 @@ public:
    Properties      GetProperties(string symbol);
   };
 
+string Symbol::equities[] = { "PETR4", "VALE3" };
+
 Properties Symbol::GetProperties(string symbol)
   {
-   if(symbol == "WIN$N") return GetWIN(symbol);
-   if(symbol == "WDO$N") return GetWDO(symbol);
-   if(symbol == "IND$N") return GetIND(symbol);
-   if(symbol == "DOL$N") return GetDOL(symbol); 
-
+   for(int i = 0; i < ArraySize(equities); i++) if(symbol == equities[i]) return GetEquity(symbol              ); // R$   1,00 / tick
+                                                if(symbol == "WIN$N"    ) return GetIBOV  (symbol, "WIN",   0.2); // R$   1,00 / tick
+                                                if(symbol == "IND$N"    ) return GetIBOV  (symbol, "IND",   5.0); // R$  25,00 / tick
+                                                if(symbol == "WDO$N"    ) return GetUSD   (symbol, "WDO",  10.0); // R$   5,00 / tick
+                                                if(symbol == "DOL$N"    ) return GetUSD   (symbol, "DOL", 250.0); // R$ 125,00 / tick
    return none;
   }
 
-Properties Symbol::GetWIN(string symbol)
+Properties Symbol::GetEquity(string symbol)
   {
-   Properties win = IBOV(symbol);
+   Properties equity = Base(symbol);
 
-   win.label      = "WIN";
-   win.multiplier = 0.2;
+   equity.bound_begin    =  10;
+   equity.bound_finish   =  15; // ==> 15:59
+   equity.begin_time[0]  =  10;
+   equity.begin_time[1]  =  11;
+   equity.begin_time[2]  =   1;
+   equity.finish_time[0] =  11;
+   equity.finish_time[1] =  15; // ==> xx:59
+   equity.finish_time[2] =   1;
+   equity.loss[0]        =   0.1;
+   equity.loss[1]        =   1.9;
+   equity.loss[2]        =   0.1;
+   equity.profit[0]      =   0.1;
+   equity.profit[1]      =   1.9;
+   equity.profit[2]      =   0.1;
+   equity.tick_size      =   0.01;
+   equity.label          = symbol;
+   equity.multiplier     = 100;
 
-   return win;
+   return equity;
   }
 
-Properties Symbol::GetWDO(string symbol)
-  {
-   Properties wdo = USD(symbol);
-
-   wdo.label      = "WDO";
-   wdo.multiplier = 10;
-
-   return wdo;
-  }
-
-Properties Symbol::GetIND(string symbol)
-  {
-   Properties ind = IBOV(symbol);
-
-   ind.label      = "IND";
-   ind.multiplier = 5;
-
-   return ind;
-  }
-
-Properties Symbol::GetDOL(string symbol)
-  {
-   Properties dol = USD(symbol);
-
-   dol.label      = "DOL";
-   dol.multiplier = 250;
-
-   return dol;
-  }
-
-Properties Symbol::IBOV(string symbol)
+Properties Symbol::GetIBOV(string symbol, string label, double multiplier)
   {
    Properties ibov = Future(symbol);
 
-   ibov.loss[0]   =  50;
-   ibov.loss[1]   = 950;
-   ibov.loss[2]   =  50;
-   ibov.profit[0] =  50;
-   ibov.profit[1] = 950;
-   ibov.profit[2] =  50;
-   ibov.tick_size =   5;
+   ibov.loss[0]    =  50;
+   ibov.loss[1]    = 950;
+   ibov.loss[2]    =  50;
+   ibov.profit[0]  =  50;
+   ibov.profit[1]  = 950;
+   ibov.profit[2]  =  50;
+   ibov.tick_size  =   5;
+   ibov.label      = label;
+   ibov.multiplier = multiplier;
 
    return ibov;
   }
 
-Properties Symbol::USD(string symbol)
+Properties Symbol::GetUSD(string symbol, string label, double multiplier)
   {
    Properties usd = Future(symbol);
 
-   usd.loss[0]   =  5;
-   usd.loss[1]   = 95;
-   usd.loss[2]   =  5;
-   usd.profit[0] =  5;
-   usd.profit[1] = 95;
-   usd.profit[2] =  5;
-   usd.tick_size =  0.5;
+   usd.loss[0]    =  5;
+   usd.loss[1]    = 95;
+   usd.loss[2]    =  5;
+   usd.profit[0]  =  5;
+   usd.profit[1]  = 95;
+   usd.profit[2]  =  5;
+   usd.tick_size  =  0.5;
+   usd.label      = label;
+   usd.multiplier = multiplier;
 
    return usd;
   }
