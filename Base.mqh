@@ -13,8 +13,8 @@ namespace Paibot
 class Base
   {
 private:
-   static ENUM_TIMEFRAMES timeframes[];
-   static int      ma_short[],
+   ENUM_TIMEFRAMES timeframes[];
+   int             ma_short[],
                    ma_long[];
    int             begin_time[],
                    finish_time[];
@@ -40,11 +40,6 @@ public:
    void            OnTimer(void);
   };
 
-ENUM_TIMEFRAMES Base::timeframes[] = { PERIOD_M1, PERIOD_M2, PERIOD_M3, PERIOD_M4, PERIOD_M5, PERIOD_M6,
-                                       PERIOD_M10, PERIOD_M12, PERIOD_M15, PERIOD_M20, PERIOD_M30 };
-int             Base::ma_short[]   = {  7,  7, 7 },
-                Base::ma_long[]    = { 21, 21, 7 };
-
 void Base::Base(void)
   {
    openers_size = 0;
@@ -56,6 +51,9 @@ bool Base::OnInit(void)
 
    if(!CheckSymbolProperties()) return false;
 
+   ArrayCopy(timeframes,  symbol_properties.timeframes);
+   ArrayCopy(ma_short,    symbol_properties.ma_short);
+   ArrayCopy(ma_long,     symbol_properties.ma_long);
    ArrayCopy(begin_time,  symbol_properties.begin_time);
    ArrayCopy(finish_time, symbol_properties.finish_time);
    ArrayCopy(loss,        symbol_properties.loss);
