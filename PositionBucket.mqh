@@ -40,8 +40,6 @@ void PositionBucket::OpenPosition(Properties &symbol_properties, Book &book, int
    if(!CheckProperties() || (side != -1 && side != 1) || price_to_open == 0 || (!async && logger.GetValue(OPENED) == 1)) return;
 
    positions[GetPlaceNext()].Open(symbol_properties, book, side, price_to_open, distance_to_loss, distance_to_profit);
-
-   if(print_data_compiled) logger.PrintDataCompiled();
   }
 
 void PositionBucket::CloseAllPositions(MqlTick &tick)

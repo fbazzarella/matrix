@@ -31,10 +31,11 @@ public:
    void            Increment(ENUM_LOGGER_KEY key, double value);
    void            KeepMax(ENUM_LOGGER_KEY key, double value);
    void            AddBalance(double balance);
+   void            PrintPositionOpened(void);
    void            PrintDataRaw(MqlTick &tick, string side, double price_closed, double balance, datetime time_closed, datetime time_opened, double price_opened, double price_for_loss, double price_for_profit);
    void            PrintDataCompiled(void);
    void            DumpDataRaw(MqlTick &tick, string side, double price_closed, double balance, datetime time_closed, datetime time_opened, double price_opened, double price_for_loss, double price_for_profit);
-   void            DumpDataCompiled(int handler);
+   void            DumpDataCompiled(int handler_data_compiled);
   };
 
 void Logger::Logger(void)
@@ -92,6 +93,11 @@ void Logger::AddBalance(double balance)
    StringConcatenate(data_balance_chain, data_balance_chain, (string)data_compiled[BALANCE_FINAL] + "\t");
   }
 
+void Logger::PrintPositionOpened(void)
+  {
+   Print(id_parent + ": Position opened!");
+  }
+
 void Logger::PrintDataRaw(MqlTick &tick, string side, double price_closed, double balance, datetime time_closed, datetime time_opened, double price_opened, double price_for_loss, double price_for_profit)
   {
    Print(id_parent + ": " + side +
@@ -136,7 +142,7 @@ void Logger::DumpDataRaw(MqlTick &tick, string side, double price_closed, double
    FileWrite(handler_data_raw, data_raw_chain);
   }
 
-void Logger::DumpDataCompiled(int handler)
+void Logger::DumpDataCompiled(int handler_data_compiled)
   {
    string profit_rate  = "0",
           prices_chain,
@@ -152,6 +158,6 @@ void Logger::DumpDataCompiled(int handler)
      GetValue(COUNT, 0), "\t", GetValue(WITH_LOSS, 0), "\t", GetValue(WITH_PROFIT, 0), "\t",
      GetValue(OPENED_MAX, 0), "\t", GetValue(OPENED_ABORTED, 0), "\t", prices_chain);
 
-   FileWrite(handler, data_compiled_chain);
+   FileWrite(handler_data_compiled, data_compiled_chain);
   }
 }

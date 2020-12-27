@@ -29,7 +29,7 @@ private:
                    handler_data_raw;
 
    bool            CheckSymbolProperties(void);
-   int             GetFileHandler(string path, string filename);
+   int             GetFileHandler(string _path);
 public:
                    Base(void);
                   ~Base(void){};
@@ -63,7 +63,7 @@ bool Base::OnInit(void)
 
    book.SetProperties(symbol_properties.close, symbol_properties.tick_size);
 
-   handler_data_raw = GetFileHandler("raw/", T2S(time_initialization));
+   handler_data_raw = GetFileHandler("raw");
 
    for(int i = 0; i < ArraySize(timeframes); i++)
      {
@@ -98,7 +98,7 @@ void Base::OnDeinit(void)
   {
    FileClose(handler_data_raw);
 
-   int handler_data_compiled = GetFileHandler("compiled/", T2S(time_initialization));
+   int handler_data_compiled = GetFileHandler("compiled");
 
    for(int i = 0; i < openers_size; i++) openers[i].OnDeinit(handler_data_compiled);
 
@@ -138,10 +138,12 @@ bool Base::CheckSymbolProperties(void)
    return true;
   }
 
-int Base::GetFileHandler(string path, string filename)
+int Base::GetFileHandler(string _path)
   {
-   string filepath = (MQLInfoInteger(MQL_TESTER) ? "tester" : "simulator") + "/" + symbol_properties.label + "/" + path;
+   string terminal = MQLInfoInteger(MQL_TESTER) ? "tester" : "simulator",
+          path     = terminal + "/" + symbol_properties.label + "/" + _path + "/",
+          name     = symbol_properties.label + "_" + T2S(time_initialization) + ".csv";
 
-   return FileOpen(filepath + filename + ".csv", FILE_READ|FILE_WRITE|FILE_CSV|FILE_COMMON, "\t");
+   return FileOpen(path + name, FILE_READ|FILE_WRITE|FILE_CSV|FILE_COMMON, "\t");
   }
 }

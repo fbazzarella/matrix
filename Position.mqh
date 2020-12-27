@@ -74,6 +74,8 @@ void Position::Open(Properties &symbol_properties, Book &book, int side, double 
    logger.KeepMax(OPENED_MAX, logger.GetValue(OPENED));
 
    book.PlaceOrders(price_for_loss, price_for_profit + (side * symbol.tick_size), GetPointer(this));
+
+   if(print_data_raw) logger.PrintPositionOpened();
   }
 
 bool Position::OnTick(MqlTick &tick, int counterpart)
