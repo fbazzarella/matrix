@@ -1,4 +1,5 @@
 datetime time_initialization = TimeTradeServer();
+int      time_activity       = 0;
 
 int GetSessionPeriod(int ilower, int ihigher, int _begin, int _finish)
   {

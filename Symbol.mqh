@@ -6,8 +6,8 @@ struct Properties
                    ma_long[3],
                    bound_begin,
                    bound_finish,
-                   begin_time[3],
-                   finish_time[3];
+                   time_begin[3],
+                   time_finish[3];
    double          loss[3],
                    profit[3],
                    tick_size;
@@ -15,7 +15,7 @@ struct Properties
    double          multiplier;
   };
 
-namespace Paibot
+namespace Matrix
 {
 class Symbol
   {
@@ -55,13 +55,13 @@ Properties Symbol::GetEquity(string symbol)
    equity.bound_begin     =  10; // ==> xx:00
    equity.bound_finish    =  15; // ==> xx:59
 
-   equity.begin_time[0]   =  10; // ==> xx:00
-   equity.begin_time[1]   =  11;
-   equity.begin_time[2]   =   1;
+   equity.time_begin[0]   =  10; // ==> xx:00
+   equity.time_begin[1]   =  11;
+   equity.time_begin[2]   =   1;
 
-   equity.finish_time[0]  =  11; // ==> xx:59
-   equity.finish_time[1]  =  15;
-   equity.finish_time[2]  =   1;
+   equity.time_finish[0]  =  11; // ==> xx:59
+   equity.time_finish[1]  =  15;
+   equity.time_finish[2]  =   1;
 
    equity.loss[0]         =   0.1;
    equity.loss[1]         =   1.9;
@@ -123,13 +123,13 @@ Properties Symbol::Future(string symbol)
    future.bound_begin     =  9; // ==> xx:00
    future.bound_finish    = 16; // ==> xx:59
 
-   future.begin_time[0]   =  9; // ==> xx:00
-   future.begin_time[1]   = 10;
-   future.begin_time[2]   =  1;
+   future.time_begin[0]   =  9; // ==> xx:00
+   future.time_begin[1]   = 10;
+   future.time_begin[2]   =  1;
 
-   future.finish_time[0]  = 12; // ==> xx:59
-   future.finish_time[1]  = 16;
-   future.finish_time[2]  =  1;
+   future.time_finish[0]  = 12; // ==> xx:59
+   future.time_finish[1]  = 16;
+   future.time_finish[2]  =  1;
 
    return future;
   }

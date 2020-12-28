@@ -9,7 +9,7 @@ enum ENUM_LOGGER_KEY
    BALANCE_FINAL  = 6
   };
 
-namespace Paibot
+namespace Matrix
 {
 class Logger
   {
@@ -31,10 +31,9 @@ public:
    void            Increment(ENUM_LOGGER_KEY key, double value);
    void            KeepMax(ENUM_LOGGER_KEY key, double value);
    void            AddBalance(double balance);
-   void            PrintPositionOpened(void);
-   void            PrintDataRaw(MqlTick &tick, string side, double price_closed, double balance, datetime time_closed, datetime time_opened, double price_opened, double price_for_loss, double price_for_profit);
+   void            PrintDataRaw(MqlTick &tick, string side, double price_closed, double balance, datetime time_opened, datetime time_closed, double price_opened, double price_for_loss, double price_for_profit);
    void            PrintDataCompiled(void);
-   void            DumpDataRaw(MqlTick &tick, string side, double price_closed, double balance, datetime time_closed, datetime time_opened, double price_opened, double price_for_loss, double price_for_profit);
+   void            DumpDataRaw(MqlTick &tick, string side, double price_closed, double balance, datetime time_opened, datetime time_closed, double price_opened, double price_for_loss, double price_for_profit);
    void            DumpDataCompiled(int handler_data_compiled);
   };
 
@@ -93,12 +92,7 @@ void Logger::AddBalance(double balance)
    StringConcatenate(data_balance_chain, data_balance_chain, (string)data_compiled[BALANCE_FINAL] + "\t");
   }
 
-void Logger::PrintPositionOpened(void)
-  {
-   Print(id_parent + ": Position opened!");
-  }
-
-void Logger::PrintDataRaw(MqlTick &tick, string side, double price_closed, double balance, datetime time_closed, datetime time_opened, double price_opened, double price_for_loss, double price_for_profit)
+void Logger::PrintDataRaw(MqlTick &tick, string side, double price_closed, double balance, datetime time_opened, datetime time_closed, double price_opened, double price_for_loss, double price_for_profit)
   {
    Print(id_parent + ": " + side +
       " position opened at "     + DoubleToString(price_opened, 2) +
@@ -125,7 +119,7 @@ void Logger::PrintDataCompiled(void)
    Print(""); Print(""); Print(""); Print("");
   }
 
-void Logger::DumpDataRaw(MqlTick &tick, string side, double price_closed, double balance, datetime time_closed, datetime time_opened, double price_opened, double price_for_loss, double price_for_profit)
+void Logger::DumpDataRaw(MqlTick &tick, string side, double price_closed, double balance, datetime time_opened, datetime time_closed, double price_opened, double price_for_loss, double price_for_profit)
   {
    uint   time_diff = (uint)(time_closed - time_opened);
    string prices_chain,

@@ -1,4 +1,4 @@
-namespace Paibot
+namespace Matrix
 {
 class PositionBucket
   {
@@ -21,7 +21,7 @@ public:
                    template<typename Book>
    void            OpenPosition(Properties &symbol_properties, Book &book, int side, double price_to_open, double distance_to_loss, double distance_to_profit);
    void            CloseAllPositions(MqlTick &tick);
-   void            DumpDataCompiled(int handler);
+   void            DumpDataCompiled(int handler_data_compiled);
   };
 
 void PositionBucket::PositionBucket(void)
@@ -51,9 +51,9 @@ void PositionBucket::CloseAllPositions(MqlTick &tick)
    for(int i = 0; i < positions_size; i++) positions[i].ForceToClose(tick);
   }
 
-void PositionBucket::DumpDataCompiled(int handler)
+void PositionBucket::DumpDataCompiled(int handler_data_compiled)
   {
-   logger.DumpDataCompiled(handler);
+   logger.DumpDataCompiled(handler_data_compiled);
   }
 
 bool PositionBucket::CheckProperties(void)

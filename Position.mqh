@@ -1,4 +1,4 @@
-namespace Paibot
+namespace Matrix
 {
 class Position
   {
@@ -75,7 +75,9 @@ void Position::Open(Properties &symbol_properties, Book &book, int side, double 
 
    book.PlaceOrders(price_for_loss, price_for_profit + (side * symbol.tick_size), GetPointer(this));
 
-   if(print_data_raw) logger.PrintPositionOpened();
+   if(print_data_compiled) logger.PrintDataCompiled();
+
+   time_activity = 0;
   }
 
 bool Position::OnTick(MqlTick &tick, int counterpart)
@@ -136,17 +138,14 @@ void Position::Close(MqlTick &tick, int counterpart, string side, double price_c
    logger.Increment(balance < 0 ? WITH_LOSS : WITH_PROFIT, 1);
    logger.AddBalance(balance);
    
-   if(print_data_raw) logger.PrintDataRaw(tick, side, price_closed, balance, time_closed, time_opened, price_opened, price_for_loss, price_for_profit);
-   if(dump_data_raw)  logger.DumpDataRaw(tick, side, price_closed, balance, time_closed, time_opened, price_opened, price_for_loss, price_for_profit);
+   if(print_data_raw) logger.PrintDataRaw(tick, side, price_closed, balance, time_opened, time_closed, price_opened, price_for_loss, price_for_profit);
+   if(dump_data_raw)  logger.DumpDataRaw (tick, side, price_closed, balance, time_opened, time_closed, price_opened, price_for_loss, price_for_profit);
+
+   time_activity = 0;
   }
 
 void Position::CloseOrder(int _counterpart)
   {
-   if(_counterpart != -1)
-     {
-      Order *counterpart = orders[_counterpart];
-
-      counterpart.Close();
-     }
+   if(_counterpart != -1){ Order *counterpart = orders[_counterpart]; counterpart.Close(); };
   }
 }

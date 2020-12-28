@@ -1,4 +1,4 @@
-﻿namespace Paibot
+﻿namespace Matrix
 {
 class Opener
   {
@@ -8,8 +8,8 @@ private:
                    ma_long;
    uint            ma_short_handler,
                    ma_long_handler;
-   int             begin_time,
-                   finish_time;
+   int             time_begin,
+                   time_finish;
    double          loss[],
                    profit[];
    MqlTick         tick;
@@ -25,7 +25,7 @@ public:
                    Opener(void);
                   ~Opener(void){};
 
-   void            OnInit(int handler_data_raw, ENUM_TIMEFRAMES _timeframe, int _begin_time, int _finish_time, int _ma_short, int _ma_long, uint _ma_short_handler, uint _ma_long_handler, double &_loss[], double &_profit[]);
+   void            OnInit(int handler_data_raw, ENUM_TIMEFRAMES _timeframe, int _ma_short, int _ma_long, uint _ma_short_handler, uint _ma_long_handler, int _time_begin, int _time_finish, double &_loss[], double &_profit[]);
    void            OnDeinit(int handler_data_compiled);
    void            OnTick(MqlTick &_tick);
                    template<typename Book>
@@ -38,15 +38,15 @@ void Opener::Opener(void)
    tick_count   = 0;
   }
 
-void Opener::OnInit(int handler_data_raw, ENUM_TIMEFRAMES _timeframe, int _begin_time, int _finish_time, int _ma_short, int _ma_long, uint _ma_short_handler, uint _ma_long_handler, double &_loss[], double &_profit[])
+void Opener::OnInit(int handler_data_raw, ENUM_TIMEFRAMES _timeframe, int _ma_short, int _ma_long, uint _ma_short_handler, uint _ma_long_handler, int _time_begin, int _time_finish, double &_loss[], double &_profit[])
   {
    timeframe        = _timeframe;
-   begin_time       = _begin_time;
-   finish_time      = _finish_time;
    ma_short         = _ma_short;
    ma_long          = _ma_long;
    ma_short_handler = _ma_short_handler;
    ma_long_handler  = _ma_long_handler;
+   time_begin       = _time_begin;
+   time_finish      = _time_finish;
 
    ArrayCopy(loss,   _loss);
    ArrayCopy(profit, _profit);
@@ -84,7 +84,7 @@ void Opener::OnTimer(Properties &symbol_properties, Book &book)
    MqlDateTime now;
    TimeTradeServer(now);
 
-   int session_period = GetSessionPeriod(symbol_properties.bound_begin, symbol_properties.bound_finish, begin_time, finish_time);
+   int session_period = GetSessionPeriod(symbol_properties.bound_begin, symbol_properties.bound_finish, time_begin, time_finish);
 
    if(now.min % (int)timeframe == 0 && session_period == 1 && tick_count > 0)
      {
@@ -113,8 +113,8 @@ string Opener::GetOpenerId(double _loss, double _profit)
           dformat = "%07.2f";
 
    StringConcatenate(opener_id, StringFormat(iformat, timeframe), "_",
-      StringFormat(iformat, begin_time), "_",StringFormat(iformat, finish_time), "_",
       StringFormat(iformat, ma_short), "_", StringFormat(iformat, ma_long), "_",
+      StringFormat(iformat, time_begin), "_",StringFormat(iformat, time_finish), "_",
       StringFormat(dformat, _loss), "_", StringFormat(dformat, _profit));
 
    return opener_id;

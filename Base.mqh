@@ -1,14 +1,14 @@
-#include <MyLibs\Paibot\TimeHelper.mqh>
-#include <MyLibs\Paibot\Symbol.mqh>
-#include <MyLibs\Paibot\Logger.mqh>
-#include <MyLibs\Paibot\Position.mqh>
-#include <MyLibs\Paibot\PositionBucket.mqh>
-#include <MyLibs\Paibot\Opener.mqh>
-#include <MyLibs\Paibot\Order.mqh>
-#include <MyLibs\Paibot\OrderBucket.mqh>
-#include <MyLibs\Paibot\Book.mqh>
+#include "TimeHelper.mqh";
+#include "Symbol.mqh";
+#include "Logger.mqh";
+#include "Position.mqh";
+#include "PositionBucket.mqh";
+#include "Opener.mqh";
+#include "Order.mqh";
+#include "OrderBucket.mqh";
+#include "Book.mqh";
 
-namespace Paibot
+namespace Matrix
 {
 class Base
   {
@@ -16,8 +16,8 @@ private:
    ENUM_TIMEFRAMES timeframes[];
    int             ma_short[],
                    ma_long[];
-   int             begin_time[],
-                   finish_time[];
+   int             time_begin[],
+                   time_finish[];
    double          loss[],
                    profit[];
 
@@ -54,8 +54,8 @@ bool Base::OnInit(void)
    ArrayCopy(timeframes,  symbol_properties.timeframes);
    ArrayCopy(ma_short,    symbol_properties.ma_short);
    ArrayCopy(ma_long,     symbol_properties.ma_long);
-   ArrayCopy(begin_time,  symbol_properties.begin_time);
-   ArrayCopy(finish_time, symbol_properties.finish_time);
+   ArrayCopy(time_begin,  symbol_properties.time_begin);
+   ArrayCopy(time_finish, symbol_properties.time_finish);
    ArrayCopy(loss,        symbol_properties.loss);
    ArrayCopy(profit,      symbol_properties.profit);
 
@@ -74,15 +74,15 @@ bool Base::OnInit(void)
             uint ma_short_handler = iMA(_Symbol, timeframes[i], _ma_short, 0, MODE_EMA, PRICE_CLOSE),
                  ma_long_handler  = iMA(_Symbol, timeframes[i], _ma_long,  0, MODE_EMA, PRICE_CLOSE);
 
-            for(int _begin_time = begin_time[0]; _begin_time <= begin_time[1]; _begin_time += begin_time[2])
+            for(int _time_begin = time_begin[0]; _time_begin <= time_begin[1]; _time_begin += time_begin[2])
               {
-               for(int _finish_time = finish_time[0]; _finish_time <= finish_time[1]; _finish_time += finish_time[2])
+               for(int _time_finish = time_finish[0]; _time_finish <= time_finish[1]; _time_finish += time_finish[2])
                  {
-                  if(_begin_time > _finish_time) continue;
+                  if(_time_begin > _time_finish) continue;
 
                   ArrayResize(openers, ++openers_size);
 
-                  openers[openers_size - 1].OnInit(handler_data_raw, timeframes[i], _begin_time, _finish_time, _ma_short, _ma_long, ma_short_handler, ma_long_handler, loss, profit);
+                  openers[openers_size - 1].OnInit(handler_data_raw, timeframes[i], _ma_short, _ma_long, ma_short_handler, ma_long_handler, _time_begin, _time_finish, loss, profit);
                  }
               }
            }
@@ -94,13 +94,14 @@ bool Base::OnInit(void)
 
 void Base::OnDeinit(void)
   {
-   FileClose(handler_data_raw);
-
    int handler_data_compiled = GetFileHandler("compiled");
 
    for(int i = 0; i < openers_size; i++) openers[i].OnDeinit(handler_data_compiled);
 
    FileClose(handler_data_compiled);
+   FileClose(handler_data_raw);
+
+   Comment("Activity finished");
   }
 
 void Base::OnTick(void)
@@ -115,6 +116,8 @@ void Base::OnTick(void)
 
 void Base::OnTimer(void)
   {
+   Comment("Last activity " + (string)time_activity++ + " seconds ago");
+
    MqlDateTime now;
    TimeTradeServer(now);
 
@@ -138,9 +141,10 @@ bool Base::CheckSymbolProperties(void)
 
 int Base::GetFileHandler(string _path)
   {
-   string terminal = MQLInfoInteger(MQL_TESTER) ? "tester" : "simulator",
-          path     = terminal + "/" + symbol_properties.label + "/" + _path + "/",
-          name     = symbol_properties.label + "_" + T2S(time_initialization) + ".csv";
+   string mode  = MQLInfoInteger(MQL_TESTER) ? "tester" : "demo",
+          label = symbol_properties.label,
+          path  = mode + "/" + label + "/" + _path + "/",
+          name  = label + "_" + T2S(time_initialization) + ".csv";
 
    return FileOpen(path + name, FILE_READ|FILE_WRITE|FILE_CSV|FILE_COMMON, "\t");
   }
