@@ -58,6 +58,8 @@ void Opener::OnInit(int handler_data_raw, ENUM_TIMEFRAMES _timeframe, int _ma_sh
          ArrayResize(buckets, ++buckets_size);
 
          buckets[buckets_size - 1].SetProperties(GetOpenerId(__loss, __profit), handler_data_raw);
+
+         count_params++;
         }
      }
   }

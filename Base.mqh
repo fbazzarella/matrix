@@ -101,7 +101,7 @@ void Base::OnDeinit(void)
    FileClose(handler_data_compiled);
    FileClose(handler_data_raw);
 
-   Comment("Activity finished");
+   Comment((string)count_params + " total parameters. Activity finished.");
   }
 
 void Base::OnTick(void)
@@ -116,7 +116,7 @@ void Base::OnTick(void)
 
 void Base::OnTimer(void)
   {
-   Comment("Last activity " + (string)time_activity++ + " seconds ago");
+   Comment((string)count_params + " total parameters. Last activity " + (string)time_activity++ + " seconds ago.");
 
    MqlDateTime now;
    TimeTradeServer(now);
