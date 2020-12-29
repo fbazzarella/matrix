@@ -31,6 +31,7 @@ private:
 
    bool            CheckSymbolProperties(void);
    int             GetFileHandler(string _path);
+   void            PrintComment(string message);
 public:
                    Base(void);
                   ~Base(void){};
@@ -102,7 +103,7 @@ void Base::OnDeinit(void)
    FileClose(handler_data_compiled);
    FileClose(handler_data_raw);
 
-   Comment((string)matrix_global_count_params + " total parameters. Activity finished.");
+   PrintComment("Matrix removed.");
   }
 
 void Base::OnTick(void)
@@ -117,8 +118,6 @@ void Base::OnTick(void)
 
 void Base::OnTimer(void)
   {
-   Comment((string)matrix_global_count_params + " total parameters. Last activity " + (string)matrix_global_time_activity++ + " seconds ago.");
-
    MqlDateTime now;
    TimeTradeServer(now);
 
@@ -126,11 +125,17 @@ void Base::OnTimer(void)
      {
       for(int i = 0; i < openers_size; i++) openers[i].OnTimer(symbol_properties, book);
 
-      int bound_begin  = symbol_properties.bound_begin,
-          bound_finish = symbol_properties.bound_finish;
+      int bound_begin    = symbol_properties.bound_begin,
+          bound_finish   = symbol_properties.bound_finish,
+          session_period = GetSessionPeriod(bound_begin, bound_finish, bound_begin, bound_finish);
 
-      if(GetSessionPeriod(bound_begin, bound_finish, bound_begin, bound_finish) == 3) book.Reset();
+      matrix_global_time_activity_flag = session_period == 1 || session_period == 2;
+      
+      if(session_period == 3) book.Reset();
      }
+
+   if(matrix_global_time_activity_flag) PrintComment("Last activity " + (string)matrix_global_time_activity_count++ + " seconds ago.");
+   else PrintComment("There is no activity.");
   }
 
 bool Base::CheckSymbolProperties(void)
@@ -148,5 +153,10 @@ int Base::GetFileHandler(string _path)
           name  = label + "_" + T2S(matrix_global_time_initialization) + ".csv";
 
    return FileOpen(path + name, FILE_READ|FILE_WRITE|FILE_CSV|FILE_COMMON, "\t");
+  }
+
+void Base::PrintComment(string message)
+  {
+   Comment((string)matrix_global_parameters_count + " total parameters. " + message);
   }
 }
