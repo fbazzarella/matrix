@@ -1,4 +1,5 @@
-#include "TimeHelper.mqh";
+#include "Helpers/Environment.mqh";
+#include "Helpers/Time.mqh";
 #include "Symbol.mqh";
 #include "Logger.mqh";
 #include "Position.mqh";
@@ -101,7 +102,7 @@ void Base::OnDeinit(void)
    FileClose(handler_data_compiled);
    FileClose(handler_data_raw);
 
-   Comment((string)count_params + " total parameters. Activity finished.");
+   Comment((string)matrix_global_count_params + " total parameters. Activity finished.");
   }
 
 void Base::OnTick(void)
@@ -116,7 +117,7 @@ void Base::OnTick(void)
 
 void Base::OnTimer(void)
   {
-   Comment((string)count_params + " total parameters. Last activity " + (string)time_activity++ + " seconds ago.");
+   Comment((string)matrix_global_count_params + " total parameters. Last activity " + (string)matrix_global_time_activity++ + " seconds ago.");
 
    MqlDateTime now;
    TimeTradeServer(now);
@@ -144,7 +145,7 @@ int Base::GetFileHandler(string _path)
    string mode  = MQLInfoInteger(MQL_TESTER) ? "tester" : "demo",
           label = symbol_properties.label,
           path  = mode + "/" + label + "/" + _path + "/",
-          name  = label + "_" + T2S(time_initialization) + ".csv";
+          name  = label + "_" + T2S(matrix_global_time_initialization) + ".csv";
 
    return FileOpen(path + name, FILE_READ|FILE_WRITE|FILE_CSV|FILE_COMMON, "\t");
   }

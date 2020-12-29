@@ -1,7 +1,3 @@
-datetime time_initialization = TimeTradeServer();
-int      time_activity       = 0,
-         count_params        = 0;
-
 int GetSessionPeriod(int ilower, int ihigher, int _begin, int _finish)
   {
    string   slower   = (string)ilower,

@@ -59,7 +59,7 @@ void Opener::OnInit(int handler_data_raw, ENUM_TIMEFRAMES _timeframe, int _ma_sh
 
          buckets[buckets_size - 1].SetProperties(GetOpenerId(__loss, __profit), handler_data_raw);
 
-         count_params++;
+         matrix_global_count_params++;
         }
      }
   }

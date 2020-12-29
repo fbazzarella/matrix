@@ -77,7 +77,7 @@ void Position::Open(Properties &symbol_properties, Book &book, int side, double 
 
    if(print_data_compiled) logger.PrintDataCompiled();
 
-   time_activity = 0;
+   matrix_global_time_activity = 0;
   }
 
 bool Position::OnTick(MqlTick &tick, int counterpart)
@@ -141,7 +141,7 @@ void Position::Close(MqlTick &tick, int counterpart, string side, double price_c
    if(print_data_raw) logger.PrintDataRaw(tick, side, price_closed, balance, time_opened, time_closed, price_opened, price_for_loss, price_for_profit);
    if(dump_data_raw)  logger.DumpDataRaw (tick, side, price_closed, balance, time_opened, time_closed, price_opened, price_for_loss, price_for_profit);
 
-   time_activity = 0;
+   matrix_global_time_activity = 0;
   }
 
 void Position::CloseOrder(int _counterpart)
