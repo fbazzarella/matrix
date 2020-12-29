@@ -17,14 +17,14 @@ int GetSessionPeriod(int ilower, int ihigher, int _begin, int _finish)
    return period;
   }
 
-datetime S2T(string hm)
+datetime S2T(string _time)
   {
    MqlDateTime now;
    TimeTradeServer(now);
 
    string time;
 
-   StringConcatenate(time, now.year, ".", now.mon, ".", now.day, " ", hm, ":00");
+   StringConcatenate(time, now.year, ".", now.mon, ".", now.day, " ", _time, ":00");
 
    return StringToTime(time);
   }

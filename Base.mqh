@@ -91,6 +91,8 @@ bool Base::OnInit(void)
         }
      }
 
+   Print((string)matrix_global_parameters_count + " total parameters.");
+
    return true;
   }
 
