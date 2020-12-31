@@ -75,7 +75,7 @@ void Position::Open(Properties &symbol_properties, Book &book, int side, double 
 
    book.PlaceOrders(price_for_loss, price_for_profit + (side * symbol.tick_size), GetPointer(this));
 
-   if(print_data_compiled) logger.PrintDataCompiled();
+   if(matrix_global_print_data_compiled) logger.PrintDataCompiled();
 
    matrix_global_time_activity_count = 0;
   }
@@ -138,8 +138,8 @@ void Position::Close(MqlTick &tick, int counterpart, string side, double price_c
    logger.Increment(balance < 0 ? WITH_LOSS : WITH_PROFIT, 1);
    logger.AddBalance(balance);
    
-   if(print_data_raw) logger.PrintDataRaw(tick, side, price_closed, balance, time_opened, time_closed, price_opened, price_for_loss, price_for_profit);
-   if(dump_data_raw)  logger.DumpDataRaw (tick, side, price_closed, balance, time_opened, time_closed, price_opened, price_for_loss, price_for_profit);
+   if(matrix_global_print_data_raw) logger.PrintDataRaw(tick, side, price_closed, balance, time_opened, time_closed, price_opened, price_for_loss, price_for_profit);
+   if(matrix_global_dump_data_raw)  logger.DumpDataRaw (tick, side, price_closed, balance, time_opened, time_closed, price_opened, price_for_loss, price_for_profit);
 
    matrix_global_time_activity_count = 0;
   }

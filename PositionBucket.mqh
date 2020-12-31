@@ -37,7 +37,7 @@ void PositionBucket::SetProperties(string _id, int handler_data_raw)
      template<typename Book>
 void PositionBucket::OpenPosition(Properties &symbol_properties, Book &book, int side, double price_to_open, double distance_to_loss, double distance_to_profit)
   {
-   if(!CheckProperties() || (side != -1 && side != 1) || price_to_open == 0 || (!async && logger.GetValue(OPENED) == 1)) return;
+   if(!CheckProperties() || (side != -1 && side != 1) || price_to_open == 0 || (!matrix_global_async && logger.GetValue(OPENED) == 1)) return;
 
    positions[GetPlaceNext()].Open(symbol_properties, book, side, price_to_open, distance_to_loss, distance_to_profit);
   }
@@ -74,7 +74,7 @@ int PositionBucket::GetPlaceNext(void)
 
 void PositionBucket::CheckPositionsSize(void)
   {
-   if(async && logger.GetValue(OPENED) == positions_size) SetPositionsSize(positions_size * 2);
+   if(matrix_global_async && logger.GetValue(OPENED) == positions_size) SetPositionsSize(positions_size * 2);
   }
 
 void PositionBucket::SetPositionsSize(int size)

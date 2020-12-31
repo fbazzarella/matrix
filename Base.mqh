@@ -63,7 +63,7 @@ bool Base::OnInit(void)
 
    book.SetProperties(symbol_properties.close, symbol_properties.tick_size);
 
-   handler_data_raw = GetFileHandler("raw");
+   handler_data_raw = matrix_global_dump_data_raw ? GetFileHandler("raw") : -1;
 
    for(int i = 0; i < ArraySize(timeframes); i++)
      {
@@ -98,12 +98,12 @@ bool Base::OnInit(void)
 
 void Base::OnDeinit(void)
   {
-   int handler_data_compiled = GetFileHandler("compiled");
+   int handler_data_compiled = matrix_global_dump_data_compiled ? GetFileHandler("compiled") : -1;
 
    for(int i = 0; i < openers_size; i++) openers[i].OnDeinit(handler_data_compiled);
 
-   FileClose(handler_data_compiled);
-   FileClose(handler_data_raw);
+   if(matrix_global_dump_data_compiled) FileClose(handler_data_compiled);
+   if(matrix_global_dump_data_raw)      FileClose(handler_data_raw);
 
    PrintComment("Matrix removed.");
   }
@@ -151,8 +151,11 @@ int Base::GetFileHandler(string _path)
   {
    string mode  = MQLInfoInteger(MQL_TESTER) ? "tester" : "demo",
           label = symbol_properties.label,
-          path  = mode + "/" + label + "/" + _path + "/",
-          name  = label + "_" + T2S(matrix_global_time_initialization) + ".csv";
+          id    = symbol_properties.id,
+          path  = mode + "/" + label + "/" + _path + "/" + id + "/",
+          name  = path + "_" + T2S(matrix_global_time_initialization) + ".csv";
+
+   StringReplace(name, "/", "_");
 
    return FileOpen(path + name, FILE_READ|FILE_WRITE|FILE_CSV|FILE_COMMON, "\t");
   }

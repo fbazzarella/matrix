@@ -121,6 +121,8 @@ void Logger::PrintDataCompiled(void)
 
 void Logger::DumpDataRaw(MqlTick &tick, string side, double price_closed, double balance, datetime time_opened, datetime time_closed, double price_opened, double price_for_loss, double price_for_profit)
   {
+   if(handler_data_raw == -1) return;
+
    uint   time_diff = (uint)(time_closed - time_opened);
    string prices_chain,
           data_raw_chain;
@@ -138,6 +140,8 @@ void Logger::DumpDataRaw(MqlTick &tick, string side, double price_closed, double
 
 void Logger::DumpDataCompiled(int handler_data_compiled)
   {
+   if(handler_data_compiled == -1) return;
+
    string profit_rate  = "0",
           prices_chain,
           data_compiled_chain;

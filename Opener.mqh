@@ -70,7 +70,7 @@ void Opener::OnDeinit(int handler_data_compiled)
      {
       buckets[i].CloseAllPositions(tick);
 
-      if(dump_data_compiled) buckets[i].DumpDataCompiled(handler_data_compiled);
+      if(matrix_global_dump_data_compiled) buckets[i].DumpDataCompiled(handler_data_compiled);
      }
   }
 
