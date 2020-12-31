@@ -31,6 +31,8 @@ private:
    Properties      Future(string symbol);
    Properties      Base(string symbol);
    string          GetId(Properties &properties);
+                   template<typename T>
+   void            ArrayConcatenate(string &id, T &array[]);
 public:
                    Symbol(void){};
                   ~Symbol(void){};
@@ -187,16 +189,22 @@ string Symbol::GetId(Properties &properties)
   {
    string id = "id";
 
-   for(int i = 0; i < ArraySize(properties.timeframes);  i++) StringConcatenate(id, id, "_", (string)properties.timeframes[i]);
-   for(int i = 0; i < ArraySize(properties.ma_short);    i++) StringConcatenate(id, id, "_", (string)properties.ma_short[i]);
-   for(int i = 0; i < ArraySize(properties.ma_long);     i++) StringConcatenate(id, id, "_", (string)properties.ma_long[i]);
-   for(int i = 0; i < ArraySize(properties.time_begin);  i++) StringConcatenate(id, id, "_", (string)properties.time_begin[i]);
-   for(int i = 0; i < ArraySize(properties.time_finish); i++) StringConcatenate(id, id, "_", (string)properties.time_finish[i]);
-   for(int i = 0; i < ArraySize(properties.loss);        i++) StringConcatenate(id, id, "_", (string)properties.loss[i]);
-   for(int i = 0; i < ArraySize(properties.profit);      i++) StringConcatenate(id, id, "_", (string)properties.profit[i]);
+   ArrayConcatenate(id, properties.timeframes);
+   ArrayConcatenate(id, properties.ma_short);
+   ArrayConcatenate(id, properties.ma_long);
+   ArrayConcatenate(id, properties.time_begin);
+   ArrayConcatenate(id, properties.time_finish);
+   ArrayConcatenate(id, properties.loss);
+   ArrayConcatenate(id, properties.profit);
 
    StringReplace(id, "id_", "");
 
    return id;
+  }
+
+     template<typename T>
+void Symbol::ArrayConcatenate(string &id, T &array[])
+  {
+   for(int i = 0; i < ArraySize(array); i++) StringConcatenate(id, id, "_", (string)array[i]);
   }
 }
