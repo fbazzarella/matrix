@@ -31,6 +31,7 @@ private:
 
    bool            CheckSymbolProperties(void);
    int             GetFileHandler(string _path);
+   string          ExtractCommitHash(string _filename);
    void            PrintComment(string message);
 public:
                    Base(void);
@@ -91,7 +92,8 @@ bool Base::OnInit(void)
         }
      }
 
-   Print((string)matrix_global_parameters_count + " total parameters.");
+   Print((string)matrix_global_parameters_count + " total parameters and ",
+         (string)(int)(TimeTradeServer() - matrix_global_time_initialization), " seconds to initialize.");
 
    return true;
   }
@@ -149,15 +151,25 @@ bool Base::CheckSymbolProperties(void)
 
 int Base::GetFileHandler(string _path)
   {
-   string mode  = MQLInfoInteger(MQL_TESTER) ? "tester" : "demo",
+   string hash  = ExtractCommitHash(MQLInfoString(MQL_PROGRAM_NAME)),
+          mode  = MQLInfoInteger(MQL_TESTER) ? "tester" : "demo",
           label = symbol_properties.label,
           id    = symbol_properties.id,
-          path  = mode + "/" + label + "/" + _path + "/" + id + "/",
-          name  = path + "_" + T2S(matrix_global_time_initialization) + ".csv";
-
-   StringReplace(name, "/", "_");
+          path  = hash + "/" + mode + "/" + label + "/" + _path + "/" + id + "/",
+          name  = T2S(matrix_global_time_initialization) + ".csv";
 
    return FileOpen(path + name, FILE_READ|FILE_WRITE|FILE_CSV|FILE_COMMON, "\t");
+  }
+
+string Base::ExtractCommitHash(string _filename)
+  {
+   string filename[];
+
+   StringSplit(_filename, StringGetCharacter("_", 0), filename);
+
+   int size = ArraySize(filename);
+
+   return size >= 2 ? filename[size - 1] : "head";
   }
 
 void Base::PrintComment(string message)
