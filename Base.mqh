@@ -1,4 +1,5 @@
 #include "Helpers/Environment.mqh";
+#include "Helpers/MovingAverage.mqh";
 #include "Helpers/Time.mqh";
 #include "Symbol.mqh";
 #include "Logger.mqh";

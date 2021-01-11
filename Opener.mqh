@@ -19,8 +19,6 @@ private:
 
    string          GetFileName(void);
    string          GetOpenerId(double loss, double profit);
-   int             GetSideFromMA(void);
-   double          GetPriceFromMASide(int side);
 public:
                    Opener(void);
                   ~Opener(void){};
@@ -91,8 +89,8 @@ void Opener::OnTimer(Properties &symbol_properties, Book &book)
    if(now.min % (int)timeframe == 0 && session_period == 1 && tick_count > 0)
      {
       int    i     = 0,
-             side  = GetSideFromMA();
-      double price = GetPriceFromMASide(side);
+             side  = GetSideFromMA(ma_short_handler, ma_long_handler);
+      double price = GetPriceFromMASide(side, tick);
 
       for(double __loss = loss[0]; __loss <= loss[1]; __loss += loss[2])
         {
@@ -120,25 +118,5 @@ string Opener::GetOpenerId(double _loss, double _profit)
       StringFormat(dformat, _loss), "_", StringFormat(dformat, _profit));
 
    return opener_id;
-  }
-
-int Opener::GetSideFromMA(void)
-  {
-   double ma_short_buffer[],
-          ma_long_buffer[];
-
-   CopyBuffer(ma_short_handler, 0, 0, 2, ma_short_buffer);
-   CopyBuffer(ma_long_handler,  0, 0, 2, ma_long_buffer);
-   
-   return ma_short_buffer[0] - ma_long_buffer[0] < ma_short_buffer[1] - ma_long_buffer[1] ? 1 : -1;
-  }
-
-double Opener::GetPriceFromMASide(int side)
-  {
-   double price = 0;
-
-   if(tick.bid < tick.ask) price = side == -1 ? tick.bid : tick.ask;
-
-   return price;
   }
 }
