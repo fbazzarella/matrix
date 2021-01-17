@@ -133,6 +133,7 @@ void Position::Close(MqlTick &tick, int counterpart, string side, double price_c
    state        = 0;
    time_closed  = TimeTradeServer();
    balance     *= symbol.multiplier;
+   balance     -= symbol.comission;
 
    logger.Increment(OPENED, -1);
    logger.Increment(balance < 0 ? WITH_LOSS : WITH_PROFIT, 1);

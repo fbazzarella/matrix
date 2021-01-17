@@ -11,6 +11,7 @@ struct Properties
    double          loss[3],
                    profit[3],
                    tick_size,
+                   comission,
                    multiplier;
    string          label,
                    id;
@@ -56,29 +57,28 @@ Properties Symbol::GetEquity(string symbol)
   {
    Properties equity      = Base(symbol);
 
-   equity.bound_begin     =  10; // ==> xx:00
-   equity.bound_finish    =  15; // ==> xx:59
-
-   equity.time_begin[0]   =  10; // ==> xx:00
-   equity.time_begin[1]   =  11;
-   equity.time_begin[2]   =   1;
-
-   equity.time_finish[0]  =  11; // ==> xx:59
-   equity.time_finish[1]  =  15;
-   equity.time_finish[2]  =   1;
-
-   equity.loss[0]         =   0.1;
-   equity.loss[1]         =   1.9;
-   equity.loss[2]         =   0.1;
-
-   equity.profit[0]       =   0.1;
-   equity.profit[1]       =   1.9;
-   equity.profit[2]       =   0.1;
-
-   equity.tick_size       =   0.01;
-   equity.multiplier      = 100;
+   equity.bound_begin     =   10; // ==> xx:00
+   equity.bound_finish    =   15; // ==> xx:59
+ 
+   equity.time_begin[0]   =   10; // ==> xx:00
+   equity.time_begin[1]   =   11;
+   equity.time_begin[2]   =    1;
+ 
+   equity.time_finish[0]  =   11; // ==> xx:59
+   equity.time_finish[1]  =   15;
+   equity.time_finish[2]  =    1;
+ 
+   equity.loss[0]         =    0.1;
+   equity.loss[1]         =    1.9;
+   equity.loss[2]         =    0.1;
+ 
+   equity.profit[0]       =    0.1;
+   equity.profit[1]       =    1.9;
+   equity.profit[2]       =    0.1;
+ 
+   equity.tick_size       =    0.01;
+   equity.multiplier      =  100;
    equity.label           = symbol;
-
    equity.id              = GetId(equity);
 
    return equity;
@@ -86,28 +86,32 @@ Properties Symbol::GetEquity(string symbol)
 
 Properties Symbol::GetIBOV(string symbol, double multiplier, string label)
   {
-   Properties ibov = Future(symbol);
+   Properties ibov        = Future(symbol);
 
-   ibov.time_begin[0]     =    9; // ==> xx:00
-   ibov.time_begin[1]     =    9;
+   ArrayResize(ibov.timeframes, 1);
+
+   ibov.timeframes[0]     = PERIOD_M1;
+
+   ibov.time_begin[0]     =   10; // ==> xx:00
+   ibov.time_begin[1]     =   10;
    ibov.time_begin[2]     =    1;
 
-   ibov.time_finish[0]    =   16; // ==> xx:59
-   ibov.time_finish[1]    =   16;
+   ibov.time_finish[0]    =   10; // ==> xx:59
+   ibov.time_finish[1]    =   10;
    ibov.time_finish[2]    =    1;
 
-   ibov.loss[0]           =   10;
-   ibov.loss[1]           =   60;
+   ibov.loss[0]           =   20;
+   ibov.loss[1]           =  100;
    ibov.loss[2]           =    5;
 
-   ibov.profit[0]         =  100;
-   ibov.profit[1]         =  600;
+   ibov.profit[0]         =   40;
+   ibov.profit[1]         =  150;
    ibov.profit[2]         =    5;
 
    ibov.tick_size         =    5;
+   ibov.comission         =    0.5;
    ibov.multiplier        = multiplier;
    ibov.label             = label;
-
    ibov.id                = GetId(ibov);
 
    return ibov;
@@ -117,6 +121,10 @@ Properties Symbol::GetUSD(string symbol, double multiplier, string label)
   {
    Properties usd         = Future(symbol);
 
+   ArrayResize(usd.timeframes, 1);
+
+   usd.timeframes[0]      = PERIOD_M1;
+
    usd.time_begin[0]      =  10; // ==> xx:00
    usd.time_begin[1]      =  10;
    usd.time_begin[2]      =   1;
@@ -125,18 +133,18 @@ Properties Symbol::GetUSD(string symbol, double multiplier, string label)
    usd.time_finish[1]     =  10;
    usd.time_finish[2]     =   1;
 
-   usd.loss[0]            =  10;
-   usd.loss[1]            =  70;
-   usd.loss[2]            =   1;
+   usd.loss[0]            =   2;
+   usd.loss[1]            =  30;
+   usd.loss[2]            =   0.5;
 
-   usd.profit[0]          =  16;
-   usd.profit[1]          = 180;
-   usd.profit[2]          =   1;
+   usd.profit[0]          =  40;
+   usd.profit[1]          =  70;
+   usd.profit[2]          =   0.5;
 
    usd.tick_size          =   0.5;
+   usd.comission          =   2.28;
    usd.multiplier         = multiplier;
    usd.label              = label;
-
    usd.id                 = GetId(usd);
 
    return usd;
@@ -156,23 +164,21 @@ Properties Symbol::Base(string symbol)
   {
    Properties base;
 
-   ArrayResize(base.timeframes, 1);
-
    base.close             = iClose(symbol, 0, 0);
 
-   base.timeframes[0]     = PERIOD_M2;
+   ArrayResize(base.timeframes, 11);
 
-   // base.timeframes[0]     = PERIOD_M1;
-   // base.timeframes[1]     = PERIOD_M2;
-   // base.timeframes[2]     = PERIOD_M3;
-   // base.timeframes[3]     = PERIOD_M4;
-   // base.timeframes[4]     = PERIOD_M5;
-   // base.timeframes[5]     = PERIOD_M6;
-   // base.timeframes[6]     = PERIOD_M10;
-   // base.timeframes[7]     = PERIOD_M12;
-   // base.timeframes[8]     = PERIOD_M15;
-   // base.timeframes[9]     = PERIOD_M20;
-   // base.timeframes[10]    = PERIOD_M30;
+   base.timeframes[0]     = PERIOD_M1;
+   base.timeframes[1]     = PERIOD_M2;
+   base.timeframes[2]     = PERIOD_M3;
+   base.timeframes[3]     = PERIOD_M4;
+   base.timeframes[4]     = PERIOD_M5;
+   base.timeframes[5]     = PERIOD_M6;
+   base.timeframes[6]     = PERIOD_M10;
+   base.timeframes[7]     = PERIOD_M12;
+   base.timeframes[8]     = PERIOD_M15;
+   base.timeframes[9]     = PERIOD_M20;
+   base.timeframes[10]    = PERIOD_M30;
 
    base.ma_short[0]       =  7;
    base.ma_short[1]       =  7;
@@ -181,6 +187,8 @@ Properties Symbol::Base(string symbol)
    base.ma_long[0]        = 21;
    base.ma_long[1]        = 21;
    base.ma_long[2]        =  7;
+
+   base.comission         =  0;
 
    return base;
   }
