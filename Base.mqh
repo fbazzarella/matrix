@@ -1,3 +1,4 @@
+#include <Generic/Internal/HashFunction.mqh>;
 #include "Helpers/Environment.mqh";
 #include "Helpers/MovingAverage.mqh";
 #include "Helpers/Time.mqh";
@@ -31,8 +32,9 @@ private:
                    handler_data_raw;
 
    bool            CheckSymbolProperties(void);
+   void            RegisterHashCode(string id, string hash);
    int             GetFileHandler(string _path);
-   string          ExtractCommitHash(string _filename);
+   string          ExtractCommit(string _filename);
    void            PrintComment(string message);
 public:
                    Base(void);
@@ -54,6 +56,8 @@ bool Base::OnInit(void)
    symbol_properties = symbol.GetProperties(_Symbol);
 
    if(!CheckSymbolProperties()) return false;
+
+   RegisterHashCode(symbol_properties.id, symbol_properties.hash);
 
    ArrayCopy(timeframes,  symbol_properties.timeframes);
    ArrayCopy(ma_short,    symbol_properties.ma_short);
@@ -150,19 +154,33 @@ bool Base::CheckSymbolProperties(void)
    return true;
   }
 
-int Base::GetFileHandler(string _path)
+void Base::RegisterHashCode(string id, string hash)
   {
-   string hash  = ExtractCommitHash(MQLInfoString(MQL_PROGRAM_NAME)),
-          mode  = MQLInfoInteger(MQL_TESTER) ? "tester" : "demo",
-          label = symbol_properties.label,
-          id    = symbol_properties.id,
-          path  = hash + "/" + mode + "/" + label + "/" + _path + "/" + id + "/",
-          name  = T2S(matrix_global_time_initialization) + ".csv";
+   int handler = FileOpen("Matrix/_hash_index.csv", FILE_READ|FILE_WRITE|FILE_CSV|FILE_COMMON, "\t");
 
-   return FileOpen(path + name, FILE_READ|FILE_WRITE|FILE_CSV|FILE_COMMON, "\t");
+   FileSeek( handler, 0, SEEK_END);
+   FileWrite(handler, hash, id);
+   FileClose(handler);
   }
 
-string Base::ExtractCommitHash(string _filename)
+int Base::GetFileHandler(string _path)
+  {
+   bool   tester = MQLInfoInteger(MQL_TESTER);
+   int    flag   = tester ? TIME_DATE : TIME_DATE|TIME_SECONDS;
+   string mode   = tester ? "tester" : "demo",
+          commit = ExtractCommit(MQLInfoString(MQL_PROGRAM_NAME)),
+          label  = symbol_properties.label,
+          id     = symbol_properties.id,
+          hash   = symbol_properties.hash,
+          name   = commit + "_" + mode + "_" + label + "_" + _path + "_" + hash + "_" +
+                   T2S(matrix_global_time_initialization, flag);
+
+   if(_path == "compiled") name = name + "_" + T2S(TimeTradeServer(), flag, true);
+
+   return FileOpen("Matrix/" + name + ".csv", FILE_READ|FILE_WRITE|FILE_CSV|FILE_COMMON, "\t");
+  }
+
+string Base::ExtractCommit(string _filename)
   {
    string filename[];
 

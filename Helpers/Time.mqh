@@ -29,9 +29,11 @@ datetime S2T(string _time)
    return StringToTime(time);
   }
 
-string T2S(datetime _time)
+string T2S(datetime _time, int mode = TIME_DATE|TIME_SECONDS, bool day_after = false)
   {
-   string time = TimeToString(_time, TIME_DATE|TIME_SECONDS);
+   if(day_after) _time += 86400;
+   
+   string time = TimeToString(_time, mode);
 
    StringReplace(time, " ", "");
    StringReplace(time, ".", "");
