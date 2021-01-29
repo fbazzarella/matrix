@@ -1,21 +1,20 @@
 struct Properties
   {
-   double          close;
    ENUM_TIMEFRAMES timeframes[];
-   int             ma_short[3],
-                   ma_long[3],
+   int             ma_short[],
+                   ma_long[],
                    bound_begin,
                    bound_finish,
-                   time_begin[3],
-                   time_finish[3];
-   double          loss[3],
-                   profit[3],
+                   time_begin[],
+                   time_finish[];
+   double          loss[],
+                   profit[],
+                   close,
                    tick_size,
-                   comission,
-                   multiplier;
+                   multiplier,
+                   comission;
    string          label,
-                   id,
-                   hash;
+                   order;
   };
 
 namespace Matrix
@@ -23,18 +22,9 @@ namespace Matrix
 class Symbol
   {
 private:
-   static string   equities[];
-
    Properties      none;
-
-   Properties      GetEquity(string symbol);
-   Properties      GetIBOV(string symbol, double multiplier, string label);
-   Properties      GetUSD(string symbol, double multiplier, string label);
-   Properties      Future(string symbol);
-   Properties      Base(string symbol);
-   void            SetIdAndHash(Properties &properties);
-                   template<typename T>
-   void            ArrayConcatenate(string &id, T &array[]);
+   Properties      GetFuture(string symbol, string parameters_order, string parameters_chain, double tick_size, double multiplier, double comission);
+   void            SetParameters(Properties &properties, string parameters_chain);
 public:
                    Symbol(void){};
                   ~Symbol(void){};
@@ -42,182 +32,51 @@ public:
    Properties      GetProperties(string symbol);
   };
 
-string Symbol::equities[] = { "PETR4", "VALE3" };
-
 Properties Symbol::GetProperties(string symbol)
   {
-   for(int i = 0; i < ArraySize(equities); i++) if(symbol == equities[i]) return GetEquity(symbol              ); //   1 BRL/tick
-                                                if(symbol == "WIN$N"    ) return GetIBOV  (symbol,   0.2, "win"); //   1
-                                                if(symbol == "IND$N"    ) return GetIBOV  (symbol,   5.0, "ind"); //  25
-                                                if(symbol == "WDO$N"    ) return GetUSD   (symbol,  10.0, "wdo"); //   5
-                                                if(symbol == "DOL$N"    ) return GetUSD   (symbol, 250.0, "dol"); // 125
+   string params_order_ibov = "01", params_chain_ibov = "1_2_3_4_5_6_10_12_15_20_30#7_7_7#14_14_7#9_16_1#9_16_1#5.0_955.0_50.0#5.0_955.0_50.0",
+          params_order_usd  = "01", params_chain_usd  = "1_2_3_4_5_6_10_12_15_20_30#7_7_7#14_14_7#9_16_1#9_16_1#5.0_95.0_5.0#5.0_95.0_5.0";
+
+   if(symbol == "WIN$N") return GetFuture(symbol, params_order_ibov, params_chain_ibov, 5.0,   0.2, 0.50); //   1 BRL/tick
+   if(symbol == "IND$N") return GetFuture(symbol, params_order_ibov, params_chain_ibov, 5.0,   5.0, 0.50); //  25
+   if(symbol == "WDO$N") return GetFuture(symbol, params_order_usd,  params_chain_usd,  0.5,  10.0, 2.28); //   5
+   if(symbol == "DOL$N") return GetFuture(symbol, params_order_usd,  params_chain_usd,  0.5, 250.0, 2.28); // 125
+
    return none;
   }
 
-Properties Symbol::GetEquity(string symbol)
+Properties Symbol::GetFuture(string symbol, string parameters_order, string parameters_chain, double tick_size, double multiplier, double comission)
   {
-   Properties equity      = Base(symbol);
+   Properties future;
 
-   equity.bound_begin     =   10; // ==> xx:00
-   equity.bound_finish    =   15; // ==> xx:59
- 
-   equity.time_begin[0]   =   10; // ==> xx:00
-   equity.time_begin[1]   =   11;
-   equity.time_begin[2]   =    1;
- 
-   equity.time_finish[0]  =   11; // ==> xx:59
-   equity.time_finish[1]  =   15;
-   equity.time_finish[2]  =    1;
- 
-   equity.loss[0]         =    0.1;
-   equity.loss[1]         =    1.9;
-   equity.loss[2]         =    0.1;
- 
-   equity.profit[0]       =    0.1;
-   equity.profit[1]       =    1.9;
-   equity.profit[2]       =    0.1;
- 
-   equity.tick_size       =    0.01;
-   equity.multiplier      =  100;
-   equity.label           = symbol;
-   
-   SetIdAndHash(equity);
+   future.bound_begin  =  9;
+   future.bound_finish = 16;
 
-   return equity;
-  }
+   future.close        = iClose(symbol, 0, 0);
+   future.label        = StringSubstr(symbol, 0, 3);
+   future.order        = parameters_order;
+   future.tick_size    = tick_size;
+   future.multiplier   = multiplier;
+   future.comission    = comission;
 
-Properties Symbol::GetIBOV(string symbol, double multiplier, string label)
-  {
-   Properties ibov        = Future(symbol);
-
-   // ArrayResize(ibov.timeframes, 1);
-
-   // ibov.timeframes[0]     = PERIOD_M1;
-
-   ibov.time_begin[0]     =    9; // ==> xx:00
-   ibov.time_begin[1]     =   16;
-   ibov.time_begin[2]     =    1;
-
-   ibov.time_finish[0]    =    9; // ==> xx:59
-   ibov.time_finish[1]    =   16;
-   ibov.time_finish[2]    =    1;
-
-   ibov.loss[0]           =    5;
-   ibov.loss[1]           =  955;
-   ibov.loss[2]           =   50;
-
-   ibov.profit[0]         =    5;
-   ibov.profit[1]         =  955;
-   ibov.profit[2]         =   50;
-
-   ibov.tick_size         =    5;
-   ibov.comission         =    0.5;
-   ibov.multiplier        = multiplier;
-   ibov.label             = label;
-   
-   SetIdAndHash(ibov);
-
-   return ibov;
-  }
-
-Properties Symbol::GetUSD(string symbol, double multiplier, string label)
-  {
-   Properties usd         = Future(symbol);
-
-   // ArrayResize(usd.timeframes, 1);
-
-   // usd.timeframes[0]      = PERIOD_M1;
-
-   usd.time_begin[0]      =   9; // ==> xx:00
-   usd.time_begin[1]      =  16;
-   usd.time_begin[2]      =   1;
-
-   usd.time_finish[0]     =   9; // ==> xx:59
-   usd.time_finish[1]     =  16;
-   usd.time_finish[2]     =   1;
-
-   usd.loss[0]            =   5;
-   usd.loss[1]            =  95;
-   usd.loss[2]            =   5;
-
-   usd.profit[0]          =   5;
-   usd.profit[1]          =  95;
-   usd.profit[2]          =   5;
-
-   usd.tick_size          =   0.5;
-   usd.comission          =   2.28;
-   usd.multiplier         = multiplier;
-   usd.label              = label;
-   
-   SetIdAndHash(usd);
-
-   return usd;
-  }
-
-Properties Symbol::Future(string symbol)
-  {
-   Properties future      = Base(symbol);
-
-   future.bound_begin     =  9; // ==> xx:00
-   future.bound_finish    = 16; // ==> xx:59
+   StringToLower(future.label);
+   SetParameters(future, parameters_chain);
 
    return future;
   }
 
-Properties Symbol::Base(string symbol)
+void Symbol::SetParameters(Properties &properties, string parameters_chain)
   {
-   Properties base;
+   string parameters[];
+   
+   StringSplit(parameters_chain, StringGetCharacter("#", 0), parameters);
 
-   base.close             = iClose(symbol, 0, 0);
-
-   ArrayResize(base.timeframes, 11);
-
-   base.timeframes[0]     = PERIOD_M1;
-   base.timeframes[1]     = PERIOD_M2;
-   base.timeframes[2]     = PERIOD_M3;
-   base.timeframes[3]     = PERIOD_M4;
-   base.timeframes[4]     = PERIOD_M5;
-   base.timeframes[5]     = PERIOD_M6;
-   base.timeframes[6]     = PERIOD_M10;
-   base.timeframes[7]     = PERIOD_M12;
-   base.timeframes[8]     = PERIOD_M15;
-   base.timeframes[9]     = PERIOD_M20;
-   base.timeframes[10]    = PERIOD_M30;
-
-   base.ma_short[0]       =  7;
-   base.ma_short[1]       =  7;
-   base.ma_short[2]       =  7;
-
-   base.ma_long[0]        = 14;
-   base.ma_long[1]        = 14;
-   base.ma_long[2]        =  7;
-
-   base.comission         =  0;
-
-   return base;
-  }
-
-void Symbol::SetIdAndHash(Properties &properties)
-  {
-   string id = "id";
-
-   ArrayConcatenate(id, properties.timeframes);
-   ArrayConcatenate(id, properties.ma_short);
-   ArrayConcatenate(id, properties.ma_long);
-   ArrayConcatenate(id, properties.time_begin);
-   ArrayConcatenate(id, properties.time_finish);
-   ArrayConcatenate(id, properties.loss);
-   ArrayConcatenate(id, properties.profit);
-
-   StringReplace(id, "id_", "");
-
-   properties.id   = id;
-   properties.hash = (string)GetHashCode(id);
-  }
-
-     template<typename T>
-void Symbol::ArrayConcatenate(string &id, T &array[])
-  {
-   for(int i = 0; i < ArraySize(array); i++) StringConcatenate(id, id, "_", (string)array[i]);
+   ArrayFillFromString(properties.timeframes,  parameters[0]);
+   ArrayFillFromString(properties.ma_short,    parameters[1]);
+   ArrayFillFromString(properties.ma_long,     parameters[2]);
+   ArrayFillFromString(properties.time_begin,  parameters[3]);
+   ArrayFillFromString(properties.time_finish, parameters[4]);
+   ArrayFillFromString(properties.loss,        parameters[5]);
+   ArrayFillFromString(properties.profit,      parameters[6]);
   }
 }
