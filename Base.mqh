@@ -16,7 +16,6 @@ namespace Matrix
 class Base
   {
 private:
-   string          commit_hash;
    ENUM_TIMEFRAMES timeframes[];
    int             ma_short[],
                    ma_long[];
@@ -31,31 +30,34 @@ private:
    Opener          openers[];
    int             openers_size,
                    handler_data_raw;
+   string          commit_hash;
 
    bool            CheckSymbolProperties(void);
    int             GetFileHandler(string type);
    void            PrintComment(string message);
 public:
-                   Base(void);
+                   Base(string _commit_hash);
                   ~Base(void){};
 
-   bool            OnInit(string _commit_hash);
+   bool            OnInit(void);
    void            OnDeinit(void);
    void            OnTick(void);
    void            OnTimer(void);
   };
 
-void Base::Base(void)
+void Base::Base(string _commit_hash)
   {
+   commit_hash  = _commit_hash;
    openers_size = 0;
   }
 
-bool Base::OnInit(string _commit_hash)
+bool Base::OnInit(void)
   {
-   commit_hash       = _commit_hash;
    symbol_properties = symbol.GetProperties(_Symbol);
 
    if(!CheckSymbolProperties()) return false;
+
+   // return false;
 
    ArrayCopy(timeframes,  symbol_properties.timeframes);
    ArrayCopy(ma_short,    symbol_properties.ma_short);
@@ -164,7 +166,7 @@ int Base::GetFileHandler(string type)
    if(type == "compiled") StringConcatenate(dates, dates, "_", T2S(TimeTradeServer(), flag, true));
 
    return FileOpen("Matrix/" + (matrix_global_execution_group != "" ? matrix_global_execution_group + "/" : "")
-                   + mode + "_" + label + "_" + type + "_" + dates + "_" + order + "_" + commit_hash
+                   + mode + "_" + label + "_" + type + "_" + dates + order + "_" + commit_hash
                    + ".csv", FILE_READ|FILE_WRITE|FILE_CSV|FILE_COMMON, "\t");
   }
 

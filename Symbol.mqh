@@ -24,6 +24,7 @@ class Symbol
 private:
    Properties      none;
    Properties      GetFuture(string symbol, string parameters_order, string parameters_chain, double tick_size, double multiplier, double comission);
+   bool            LoadParameters(string symbol, string &parameters[]);
    void            SetParameters(Properties &properties, string parameters_chain);
 public:
                    Symbol(void){};
@@ -34,13 +35,14 @@ public:
 
 Properties Symbol::GetProperties(string symbol)
   {
-   string params_order_ibov = "01", params_chain_ibov = "1_2_3_4_5_6_10_12_15_20_30#7_7_7#14_14_7#9_16_1#9_16_1#5.0_955.0_50.0#5.0_955.0_50.0",
-          params_order_usd  = "01", params_chain_usd  = "1_2_3_4_5_6_10_12_15_20_30#7_7_7#14_14_7#9_16_1#9_16_1#5.0_95.0_5.0#5.0_95.0_5.0";
+   string parameters[];
 
-   if(symbol == "WIN$N") return GetFuture(symbol, params_order_ibov, params_chain_ibov, 5.0,   0.2, 0.50); //   1 BRL/tick
-   if(symbol == "IND$N") return GetFuture(symbol, params_order_ibov, params_chain_ibov, 5.0,   5.0, 0.50); //  25
-   if(symbol == "WDO$N") return GetFuture(symbol, params_order_usd,  params_chain_usd,  0.5,  10.0, 2.28); //   5
-   if(symbol == "DOL$N") return GetFuture(symbol, params_order_usd,  params_chain_usd,  0.5, 250.0, 2.28); // 125
+   if(!LoadParameters(symbol, parameters)) return none;
+
+        if(symbol == "WIN$N") return GetFuture(symbol, parameters[1], parameters[2], 5.0,   0.2, 0.50); //   1 BRL/tick
+   else if(symbol == "IND$N") return GetFuture(symbol, parameters[1], parameters[2], 5.0,   5.0, 0.00); //  25
+   else if(symbol == "WDO$N") return GetFuture(symbol, parameters[1], parameters[2], 0.5,  10.0, 2.28); //   5
+   else if(symbol == "DOL$N") return GetFuture(symbol, parameters[1], parameters[2], 0.5, 250.0, 0.00); // 125
 
    return none;
   }
@@ -63,6 +65,24 @@ Properties Symbol::GetFuture(string symbol, string parameters_order, string para
    SetParameters(future, parameters_chain);
 
    return future;
+  }
+
+bool Symbol::LoadParameters(string symbol, string &parameters[])
+  {
+   int handler = FileOpen("Matrix/_ParametersSets/" + symbol + ".csv", FILE_READ|FILE_TXT|FILE_COMMON|FILE_ANSI, ";");
+
+   if(handler == -1) return false;
+
+   while(!FileIsEnding(handler))
+     {
+      StringSplit(FileReadString(handler), StringGetCharacter(";", 0), parameters);
+
+      if(parameters[0] == "use") break;
+     }
+
+   FileClose(handler);
+
+   return true;
   }
 
 void Symbol::SetParameters(Properties &properties, string parameters_chain)
