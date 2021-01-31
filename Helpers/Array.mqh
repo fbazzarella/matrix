@@ -28,3 +28,17 @@ void ArrayConvertFromStringAndCopy(double &dst_array[], string &src_array[])
 
    for(int i = 0; i < size; i++) dst_array[i] = (double)src_array[i];
   }
+
+bool ArrayFillFromFile(string &array[], int handler, string search_term)
+  {
+   FileSeek(handler, 0, SEEK_SET);
+
+   while(!FileIsEnding(handler))
+     {
+      StringSplit(FileReadString(handler), StringGetCharacter(";", 0), array);
+
+      if(array[0] == search_term) return true;
+     }
+
+   return false;
+  }

@@ -16,6 +16,8 @@ namespace Matrix
 class Base
   {
 private:
+   string          commit_hash;
+
    ENUM_TIMEFRAMES timeframes[];
    int             ma_short[],
                    ma_long[];
@@ -30,7 +32,6 @@ private:
    Opener          openers[];
    int             openers_size,
                    handler_data_raw;
-   string          commit_hash;
 
    bool            CheckSymbolProperties(void);
    int             GetFileHandler(string type);
@@ -56,8 +57,6 @@ bool Base::OnInit(void)
    symbol_properties = symbol.GetProperties(_Symbol);
 
    if(!CheckSymbolProperties()) return false;
-
-   // return false;
 
    ArrayCopy(timeframes,  symbol_properties.timeframes);
    ArrayCopy(ma_short,    symbol_properties.ma_short);
