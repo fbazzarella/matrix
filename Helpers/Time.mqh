@@ -41,3 +41,15 @@ string T2S(datetime _time, int mode = TIME_DATE|TIME_SECONDS, bool day_after = f
 
    return time;
   }
+
+string Today2S(void)
+  {
+   MqlDateTime now;
+   TimeTradeServer(now);
+
+   string today;
+
+   StringConcatenate(today, now.year, ".", now.mon, ".", now.day);
+
+   return today;
+  }

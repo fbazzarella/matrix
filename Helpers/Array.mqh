@@ -29,6 +29,11 @@ void ArrayConvertFromStringAndCopy(double &dst_array[], string &src_array[])
    for(int i = 0; i < size; i++) dst_array[i] = (double)src_array[i];
   }
 
+void ArrayConvertFromStringAndCopy(string &dst_array[], string &src_array[])
+  {
+   ArrayCopy(dst_array, src_array);
+  }
+
 bool ArrayFillFromFile(string &array[], int handler, string search_term)
   {
    FileSeek(handler, 0, SEEK_SET);

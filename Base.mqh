@@ -16,6 +16,7 @@ namespace Matrix
 class Base
   {
 private:
+   bool            symbol_dayoff;
    string          commit_hash;
 
    ENUM_TIMEFRAMES timeframes[];
@@ -27,13 +28,11 @@ private:
                    profit[];
 
    Symbol          symbol;
-   Properties      symbol_properties;
    Book            book;
    Opener          openers[];
    int             openers_size,
                    handler_data_raw;
 
-   bool            CheckSymbolProperties(void);
    int             GetFileHandler(string type);
    void            PrintComment(string message);
 public:
@@ -48,25 +47,24 @@ public:
 
 void Base::Base(string _commit_hash)
   {
-   commit_hash  = _commit_hash;
-   openers_size = 0;
+   symbol_dayoff = false;
+   commit_hash   = _commit_hash;
+   openers_size  = 0;
   }
 
 bool Base::OnInit(void)
   {
-   symbol_properties = symbol.GetProperties(_Symbol);
+   if(!symbol.OnInit(_Symbol)) return false;
 
-   if(!CheckSymbolProperties()) return false;
+   ArrayCopy(timeframes,  symbol.properties.timeframes);
+   ArrayCopy(ma_short,    symbol.properties.ma_short);
+   ArrayCopy(ma_long,     symbol.properties.ma_long);
+   ArrayCopy(time_begin,  symbol.properties.time_begin);
+   ArrayCopy(time_finish, symbol.properties.time_finish);
+   ArrayCopy(loss,        symbol.properties.loss);
+   ArrayCopy(profit,      symbol.properties.profit);
 
-   ArrayCopy(timeframes,  symbol_properties.timeframes);
-   ArrayCopy(ma_short,    symbol_properties.ma_short);
-   ArrayCopy(ma_long,     symbol_properties.ma_long);
-   ArrayCopy(time_begin,  symbol_properties.time_begin);
-   ArrayCopy(time_finish, symbol_properties.time_finish);
-   ArrayCopy(loss,        symbol_properties.loss);
-   ArrayCopy(profit,      symbol_properties.profit);
-
-   book.SetProperties(symbol_properties.close, symbol_properties.tick_size);
+   book.SetProperties(symbol.properties.close, symbol.properties.tick_size);
 
    handler_data_raw = matrix_global_dump_data_raw ? GetFileHandler("raw") : -1;
 
@@ -96,8 +94,7 @@ bool Base::OnInit(void)
         }
      }
 
-   Print((string)matrix_global_parameters_count + " total parameters and ",
-         (string)(int)(TimeTradeServer() - matrix_global_time_initialization), " seconds to initialize.");
+   Print((string)matrix_global_parameters_count + " total parameters and ", (string)(int)(TimeTradeServer() - matrix_global_time_initialization), " seconds to initialize.");
 
    return true;
   }
@@ -131,26 +128,24 @@ void Base::OnTimer(void)
 
    if(now.sec == 0)
      {
-      for(int i = 0; i < openers_size; i++) openers[i].OnTimer(symbol_properties, book);
+      if(now.hour == 8 && now.min == 0) symbol_dayoff = symbol.IsTodayADayOff();
 
-      int bound_begin    = symbol_properties.bound_begin,
-          bound_finish   = symbol_properties.bound_finish,
-          session_period = GetSessionPeriod(bound_begin, bound_finish, bound_begin, bound_finish);
+      if(!symbol_dayoff)
+        {
+         for(int i = 0; i < openers_size; i++) openers[i].OnTimer(symbol.properties, book);
 
-      matrix_global_time_activity_flag = session_period == 1 || session_period == 2;
-      
-      if(session_period == 3) book.Reset();
+         int bound_begin    = symbol.properties.bound_begin,
+             bound_finish   = symbol.properties.bound_finish,
+             session_period = GetSessionPeriod(bound_begin, bound_finish, bound_begin, bound_finish);
+
+         matrix_global_time_activity_flag = session_period == 1 || session_period == 2;
+         
+         if(session_period == 3) book.Reset();
+        }
      }
 
    if(matrix_global_time_activity_flag) PrintComment("Last activity " + (string)matrix_global_time_activity_count++ + " seconds ago.");
-   else PrintComment("There is no activity.");
-  }
-
-bool Base::CheckSymbolProperties(void)
-  {
-   if(symbol_properties.close == 0){ Print("ERROR: Please check the Symbol used."); return false; };
-
-   return true;
+   else                                 PrintComment("There is no activity.");
   }
 
 int Base::GetFileHandler(string type)
@@ -158,14 +153,17 @@ int Base::GetFileHandler(string type)
    bool   tester = MQLInfoInteger(MQL_TESTER);
    int    flag   = tester ? TIME_DATE : TIME_DATE|TIME_SECONDS;
    string mode   = tester ? "tester" : "demo",
-          label  = symbol_properties.label,
-          order  = symbol_properties.order,
-          dates  = T2S(matrix_global_time_initialization, flag);
+          label  = symbol.properties.label,
+          order  = symbol.properties.order,
+          dates  = T2S(matrix_global_time_initialization, flag),
+          set_n  = (string)matrix_global_parameters_set_n,
+          set_of = (string)matrix_global_parameters_set_of,
+          set    = set_n + "of" + set_of;
    
    if(type == "compiled") StringConcatenate(dates, dates, "_", T2S(TimeTradeServer(), flag, true));
 
    return FileOpen("Matrix/" + (matrix_global_execution_group != "" ? matrix_global_execution_group + "/" : "")
-                   + mode + "_" + label + "_" + type + "_" + dates + order + "_" + commit_hash
+                   + mode + "_" + label + "_" + type + "_" + dates + order + "_" + set + "_" + commit_hash
                    + ".csv", FILE_READ|FILE_WRITE|FILE_CSV|FILE_COMMON, "\t");
   }
 

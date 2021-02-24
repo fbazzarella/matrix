@@ -8,6 +8,7 @@ struct Properties
    double          loss[],
                    profit[],
                    header[];
+   string          daysoff[];
    int             bound_begin,
                    bound_finish;
    double          tick_size,
@@ -23,32 +24,76 @@ namespace Matrix
 class Symbol
   {
 private:
-   Properties      none;
-   Properties      SetProperties(string symbol, string parameters_order, string parameters_chain, string header_chain);
-   void            SetParametersAndHeader(Properties &properties, string parameters_chain, string header_chain);
-   bool            LoadSymbolData(string symbol, string &parameters[], string &header[]);
+   bool            AdjustTimeframes(void);
+   void            SetProperties(string symbol, string parameters_order, string parameters_chain, string header_chain, string daysoff_chain);
+   void            ParseSymbolData(string parameters_chain, string header_chain, string daysoff_chain);
+   bool            LoadSymbolData(string symbol, string &parameters[], string &header[], string &daysoff[]);
 public:
+   Properties      properties;
+
                    Symbol(void){};
                   ~Symbol(void){};
 
-   Properties      GetProperties(string symbol);
+   bool            OnInit(string symbol);
+   bool            IsTodayADayOff(void);
   };
 
-Properties Symbol::GetProperties(string symbol)
+bool Symbol::OnInit(string symbol)
   {
    string parameters[],
-          header[];
+          header[],
+          daysoff[];
 
-   if(!LoadSymbolData(symbol, parameters, header)) return none;
+   if(!LoadSymbolData(_Symbol, parameters, header, daysoff)){ Print("ERROR: Please check the Symbol used."); return false; };
 
-   return SetProperties(symbol, parameters[1], parameters[2], header[2]);
+   SetProperties(_Symbol, parameters[1], parameters[2], header[2], daysoff[2]);
+
+   if(!AdjustTimeframes()){ Print("ERROR: Please check the Parameters Set numbers."); return false; };
+
+   return true;
   }
 
-Properties Symbol::SetProperties(string symbol, string parameters_order, string parameters_chain, string header_chain)
+bool Symbol::IsTodayADayOff(void)
   {
-   Properties properties;
+   for(int i = 0; i < ArraySize(properties.daysoff); i++) if(properties.daysoff[i] == Today2S()) return true;
 
-   SetParametersAndHeader(properties, parameters_chain, header_chain);
+   return false;
+  }
+
+bool Symbol::AdjustTimeframes(void)
+  {
+   int n    = matrix_global_parameters_set_n,
+       of   = matrix_global_parameters_set_of,
+       size = ArraySize(properties.timeframes);
+
+   if(n <= 0 || n > of || of <= 0 || of > size) return false;
+
+   int _timeframes[],
+       _size,
+       _i;
+
+   for(int i = 0; i <= size; i += of)
+     {
+      _i = i + n - 1;
+
+      if(_i < size)
+        {
+         _size = ArraySize(_timeframes);
+
+         ArrayResize(_timeframes, _size + 1);
+         ArrayFill  (_timeframes, _size, 1, properties.timeframes[_i]);
+        };
+      }
+
+   ArrayFree(properties.timeframes);
+   ArrayCopy(properties.timeframes, _timeframes);
+
+   return true;
+  }
+
+void Symbol::SetProperties(string symbol, string parameters_order, string parameters_chain, string header_chain, string daysoff_chain)
+  {
+   ParseSymbolData(parameters_chain, header_chain, daysoff_chain);
 
    properties.bound_begin  = (int)properties.header[0];
    properties.bound_finish = (int)properties.header[1];
@@ -60,11 +105,9 @@ Properties Symbol::SetProperties(string symbol, string parameters_order, string 
    properties.order        = parameters_order;
 
    StringToLower(properties.label);
-
-   return properties;
   }
 
-void Symbol::SetParametersAndHeader(Properties &properties, string parameters_chain, string header_chain)
+void Symbol::ParseSymbolData(string parameters_chain, string header_chain, string daysoff_chain)
   {
    string parameters[];
    
@@ -78,19 +121,21 @@ void Symbol::SetParametersAndHeader(Properties &properties, string parameters_ch
    ArrayFillFromString(properties.loss,        parameters[5]);
    ArrayFillFromString(properties.profit,      parameters[6]);
    ArrayFillFromString(properties.header,      header_chain);
+   ArrayFillFromString(properties.daysoff,     daysoff_chain);
   }
 
-bool Symbol::LoadSymbolData(string symbol, string &parameters[], string &header[])
+bool Symbol::LoadSymbolData(string symbol, string &parameters[], string &header[], string &daysoff[])
   {
    int handler = FileOpen("Matrix/_ParametersSets/" + symbol + ".csv", FILE_READ|FILE_TXT|FILE_COMMON|FILE_ANSI, ";");
 
    if(handler == -1) return false;
 
    bool success_parameters = ArrayFillFromFile(parameters, handler, "use"),
-        success_header     = ArrayFillFromFile(header,     handler, "header");
+        success_header     = ArrayFillFromFile(header,     handler, "header"),
+        success_daysoff    = ArrayFillFromFile(daysoff,    handler, "daysoff");
 
    FileClose(handler);
 
-   return success_parameters && success_header;
+   return success_parameters && success_header && success_daysoff;
   }
 }
