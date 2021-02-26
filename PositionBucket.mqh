@@ -20,8 +20,7 @@ public:
    void            SetProperties(string _id, int handler_data_raw);
                    template<typename Book>
    void            OpenPosition(Properties &symbol_properties, Book &book, int side, double price_to_open, double distance_to_loss, double distance_to_profit);
-   void            CloseAllPositions(MqlTick &tick);
-   void            DumpDataCompiled(int handler_data_compiled);
+   void            CloseAllPositions(MqlTick &tick, int handler_data_compiled);
   };
 
 void PositionBucket::PositionBucket(void)
@@ -42,18 +41,15 @@ void PositionBucket::OpenPosition(Properties &symbol_properties, Book &book, int
    positions[GetPlaceNext()].Open(symbol_properties, book, side, price_to_open, distance_to_loss, distance_to_profit);
   }
 
-void PositionBucket::CloseAllPositions(MqlTick &tick)
+void PositionBucket::CloseAllPositions(MqlTick &tick, int handler_data_compiled)
   {
    if(logger.GetValue(OPENED) == 0) return;
 
    logger.Increment(OPENED_ABORTED, logger.GetValue(OPENED));
 
    for(int i = 0; i < positions_size; i++) positions[i].ForceToClose(tick);
-  }
 
-void PositionBucket::DumpDataCompiled(int handler_data_compiled)
-  {
-   logger.DumpDataCompiled(handler_data_compiled);
+   if(matrix_global_dump_data_compiled) logger.DumpDataCompiled(handler_data_compiled);
   }
 
 bool PositionBucket::CheckProperties(void)

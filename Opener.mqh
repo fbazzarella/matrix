@@ -64,12 +64,7 @@ void Opener::OnInit(int handler_data_raw, ENUM_TIMEFRAMES _timeframe, int _ma_sh
 
 void Opener::OnDeinit(int handler_data_compiled)
   {
-   for(int i = 0; i < buckets_size; i++)
-     {
-      buckets[i].CloseAllPositions(tick);
-
-      if(matrix_global_dump_data_compiled) buckets[i].DumpDataCompiled(handler_data_compiled);
-     }
+   for(int i = 0; i < buckets_size; i++) buckets[i].CloseAllPositions(tick, handler_data_compiled);
   }
 
 void Opener::OnTick(MqlTick &_tick)
@@ -102,8 +97,6 @@ void Opener::OnTimer(Properties &symbol_properties, Book &book)
 
       tick_count = 0;
      }
-
-   else if(session_period == 3) for(int i = 0; i < buckets_size; i++) buckets[i].CloseAllPositions(tick);
   }
 
 string Opener::GetOpenerId(double _loss, double _profit)

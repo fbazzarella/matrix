@@ -35,13 +35,12 @@ public:
    void            PrintDataCompiled(void);
    void            DumpDataRaw(MqlTick &tick, string side, double price_closed, double balance, datetime time_opened, datetime time_closed, double price_opened, double price_for_loss, double price_for_profit);
    void            DumpDataCompiled(int handler_data_compiled);
+   void            Reset(void);
   };
 
 void Logger::Logger(void)
   {
-   for(int i = 0; i < ArraySize(data_compiled); i++) data_compiled[i] = 0;
-
-   data_balance_chain = "0\t";
+   Reset();
   }
 
 void Logger::SetProperties(string _id_parent, int _handler_data_raw)
@@ -152,10 +151,17 @@ void Logger::DumpDataCompiled(int handler_data_compiled)
 
    StringReplace(prices_chain, ".", ",");
 
-   StringConcatenate(data_compiled_chain, "!", "\t", id_tabulated, "_\t", id_parent, "\t",
-     GetValue(COUNT, 0), "\t", GetValue(WITH_LOSS, 0), "\t", GetValue(WITH_PROFIT, 0), "\t",
-     GetValue(OPENED_MAX, 0), "\t", GetValue(OPENED_ABORTED, 0), "\t", prices_chain);
+   StringConcatenate(data_compiled_chain, TimeTradeServer(), "\t", id_parent, "\t", GetValue(COUNT, 0), "\t", prices_chain);
 
    FileWrite(handler_data_compiled, data_compiled_chain);
+
+   Reset();
+  }
+
+void Logger::Reset(void)
+  {
+   for(int i = 0; i < ArraySize(data_compiled); i++) data_compiled[i] = 0;
+
+   data_balance_chain = "0\t";
   }
 }

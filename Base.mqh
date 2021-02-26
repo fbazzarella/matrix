@@ -16,7 +16,7 @@ namespace Matrix
 class Base
   {
 private:
-   bool            symbol_dayoff;
+   bool            session_opened;
    string          commit_hash;
 
    ENUM_TIMEFRAMES timeframes[];
@@ -33,6 +33,7 @@ private:
    int             openers_size,
                    handler_data_raw;
 
+   void            CallOpenersOnDeinit(void);
    int             GetFileHandler(string type);
    void            PrintComment(string message);
 public:
@@ -47,9 +48,8 @@ public:
 
 void Base::Base(string _commit_hash)
   {
-   symbol_dayoff = false;
-   commit_hash   = _commit_hash;
-   openers_size  = 0;
+   commit_hash  = _commit_hash;
+   openers_size = 0;
   }
 
 bool Base::OnInit(void)
@@ -66,6 +66,7 @@ bool Base::OnInit(void)
 
    book.SetProperties(symbol.properties.close, symbol.properties.tick_size);
 
+   session_opened   = !symbol.IsTodayADayOff();
    handler_data_raw = matrix_global_dump_data_raw ? GetFileHandler("raw") : -1;
 
    for(int i = 0; i < ArraySize(timeframes); i++)
@@ -101,12 +102,9 @@ bool Base::OnInit(void)
 
 void Base::OnDeinit(void)
   {
-   int handler_data_compiled = matrix_global_dump_data_compiled ? GetFileHandler("compiled") : -1;
+   if(session_opened) CallOpenersOnDeinit();
 
-   for(int i = 0; i < openers_size; i++) openers[i].OnDeinit(handler_data_compiled);
-
-   if(matrix_global_dump_data_compiled) FileClose(handler_data_compiled);
-   if(matrix_global_dump_data_raw)      FileClose(handler_data_raw);
+   if(matrix_global_dump_data_raw) FileClose(handler_data_raw);
 
    PrintComment("Matrix removed.");
   }
@@ -128,9 +126,9 @@ void Base::OnTimer(void)
 
    if(now.sec == 0)
      {
-      if(now.hour == 8 && now.min == 0) symbol_dayoff = symbol.IsTodayADayOff();
+      if(now.hour == 8 && now.min == 0) session_opened = !symbol.IsTodayADayOff();
 
-      if(!symbol_dayoff)
+      if(session_opened)
         {
          for(int i = 0; i < openers_size; i++) openers[i].OnTimer(symbol.properties, book);
 
@@ -140,12 +138,28 @@ void Base::OnTimer(void)
 
          matrix_global_time_activity_flag = session_period == 1 || session_period == 2;
          
-         if(session_period == 3) book.Reset();
+         if(session_period == 3)
+           {
+            CallOpenersOnDeinit();
+
+            book.Reset();
+
+            session_opened = false;
+           };
         }
      }
 
    if(matrix_global_time_activity_flag) PrintComment("Last activity " + (string)matrix_global_time_activity_count++ + " seconds ago.");
    else                                 PrintComment("There is no activity.");
+  }
+
+void Base::CallOpenersOnDeinit(void)
+  {
+   int handler_data_compiled = matrix_global_dump_data_compiled ? GetFileHandler("compiled") : -1;
+
+   for(int i = 0; i < openers_size; i++) openers[i].OnDeinit(handler_data_compiled);
+
+   if(matrix_global_dump_data_compiled) FileClose(handler_data_compiled);
   }
 
 int Base::GetFileHandler(string type)
@@ -155,13 +169,11 @@ int Base::GetFileHandler(string type)
    string mode   = tester ? "tester" : "demo",
           label  = symbol.properties.label,
           order  = symbol.properties.order,
-          dates  = T2S(matrix_global_time_initialization, flag),
+          dates  = T2S(type == "raw" ? matrix_global_time_initialization : TimeTradeServer(), flag),
           set_n  = (string)matrix_global_parameters_set_n,
           set_of = (string)matrix_global_parameters_set_of,
           set    = set_n + "of" + set_of;
    
-   if(type == "compiled") StringConcatenate(dates, dates, "_", T2S(TimeTradeServer(), flag, true));
-
    return FileOpen("Matrix/" + (matrix_global_execution_group != "" ? matrix_global_execution_group + "/" : "")
                    + mode + "_" + label + "_" + type + "_" + dates + order + "_" + set + "_" + commit_hash
                    + ".csv", FILE_READ|FILE_WRITE|FILE_CSV|FILE_COMMON, "\t");
