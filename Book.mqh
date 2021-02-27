@@ -4,7 +4,8 @@ class Book
   {
 private:
    OrderBucket     buckets[];
-   int             buckets_size;
+   int             buckets_size,
+                   orders_count;
    double          price_base,
                    price_last_prev,
                    tick_size;
@@ -20,6 +21,7 @@ public:
    void            SetProperties(double _price_base, double _tick_size);
    void            PlaceOrders(double price0, double price1, Position *position);
    void            OnTick(MqlTick &tick);
+   bool            WasThereAPosition(void);
    void            Reset(void);
   };
 
@@ -39,6 +41,8 @@ void Book::PlaceOrders(double price0, double price1, Position *position)
   {
    if(!CheckProperties()) return;
 
+   orders_count++;
+
    buckets[GetPlace(price0)].PlaceOrder(position, 0);
    buckets[GetPlace(price1)].PlaceOrder(position, 1);
   }
@@ -53,6 +57,11 @@ void Book::OnTick(MqlTick &tick)
    for(double p = lower; p <= higher; p += tick_size) if(p != price_last_prev) buckets[GetPlace(p)].OnTick(tick);
 
    price_last_prev = tick.last;
+  }
+
+bool Book::WasThereAPosition(void)
+  {
+   return orders_count > 0;
   }
 
 void Book::Reset(void)
@@ -87,6 +96,8 @@ void Book::CheckBucketsSize(int i)
 
 void Book::SetBucketsSize(int size)
   {
+   if(size == 0) orders_count = 0;
+
    ArrayResize(buckets, buckets_size = size);
   }
 }

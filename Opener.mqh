@@ -94,9 +94,9 @@ void Opener::OnTimer(Properties &symbol_properties, Book &book)
             buckets[i++].OpenPosition(symbol_properties, book, side, price, __loss, __profit);
            }
         }
-
-      tick_count = 0;
      }
+
+   tick_count = 0;
   }
 
 string Opener::GetOpenerId(double _loss, double _profit)

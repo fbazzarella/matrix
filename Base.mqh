@@ -102,7 +102,7 @@ bool Base::OnInit(void)
 
 void Base::OnDeinit(void)
   {
-   if(session_opened) CallOpenersOnDeinit();
+   if(book.WasThereAPosition() && session_opened) CallOpenersOnDeinit();
 
    if(matrix_global_dump_data_raw) FileClose(handler_data_raw);
 
@@ -140,12 +140,12 @@ void Base::OnTimer(void)
          
          if(session_period == 3)
            {
-            CallOpenersOnDeinit();
+            if(book.WasThereAPosition()) CallOpenersOnDeinit();
 
             book.Reset();
 
             session_opened = false;
-           };
+           }
         }
      }
 
