@@ -127,7 +127,7 @@ void Logger::DumpDataRaw(MqlTick &tick, string side, double price_closed, double
           data_raw_chain;
 
    StringConcatenate(prices_chain, price_for_loss, "\t", price_opened, "\t", price_for_profit, "\t", price_closed, "\t",
-      tick.bid, "\t", tick.last, "\t", tick.ask, "\t", balance, "\t", data_compiled[BALANCE_FINAL]);
+      tick.bid, "\t", tick.last, "\t", tick.ask, "\t", balance);
 
    StringReplace(prices_chain, ".", ",");
 
