@@ -126,7 +126,7 @@ void Symbol::ParseSymbolData(string parameters_chain, string header_chain, strin
 
 bool Symbol::LoadSymbolData(string symbol, string &parameters[], string &header[], string &daysoff[])
   {
-   int handler = FileOpen("Matrix/_ParametersSets/" + symbol + ".csv", FILE_READ|FILE_TXT|FILE_COMMON|FILE_ANSI, ";");
+   int handler = FileOpen("Matrix/Symbols/" + symbol + ".csv", FILE_SHARE_READ|FILE_TXT|FILE_COMMON|FILE_ANSI, ";");
 
    if(handler == -1) return false;
 

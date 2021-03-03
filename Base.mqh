@@ -166,7 +166,7 @@ int Base::GetFileHandler(string type)
   {
    bool   tester = MQLInfoInteger(MQL_TESTER);
    int    flag   = tester ? TIME_DATE : TIME_DATE|TIME_SECONDS;
-   string mode   = tester ? "tester" : "demo",
+   string mode   = tester ? "tester" : "terminal",
           label  = symbol.properties.label,
           order  = symbol.properties.order,
           dates  = T2S(type == "raw" ? matrix_global_time_initialization : TimeTradeServer(), flag),
@@ -174,7 +174,7 @@ int Base::GetFileHandler(string type)
           set_of = (string)matrix_global_parameters_set_of,
           set    = set_n + "of" + set_of;
    
-   return FileOpen("Matrix/" + (matrix_global_execution_group != "" ? matrix_global_execution_group + "/" : "")
+   return FileOpen("Matrix/Dump/" + (matrix_global_execution_group != "" ? matrix_global_execution_group + "/" : "")
                    + mode + "_" + label + "_" + type + "_" + dates + order + "_" + set + "_" + commit_hash
                    + ".csv", FILE_READ|FILE_WRITE|FILE_CSV|FILE_COMMON, "\t");
   }
